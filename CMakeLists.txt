@@ -19,6 +19,12 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         PUBLIC_HEADER "include/libtguy.h"
         PREFIX "")
 
+include(CheckLibraryExists)
+
+check_library_exists(m pow "" LIBM_EXISTS)
+if (LIBM_EXISTS)
+    target_link_libraries(${PROJECT_NAME} PRIVATE m)
+endif ()
 
 include(GNUInstallDirs)
 
