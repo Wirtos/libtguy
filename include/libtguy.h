@@ -2,6 +2,7 @@
 #define _LIBTGUY_H_
 
 #include <stddef.h>
+#include <stdio.h>
 
 typedef struct {
     const char *str;
