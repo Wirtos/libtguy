@@ -131,10 +131,22 @@ void tguy_from_frame(TrashGuyState *st, int frame) {
     }
 }
 
-void tguy_print(const TrashGuyState *st) {
+void tguy_fprint(const TrashGuyState *st, FILE *fp) {
     for (size_t i = 0; i < st->field.len; i++) {
         for (size_t j = 0; j < st->field.arr[i].len; ++j) {
-            putchar(st->field.arr[i].str[j]);
+            putc(st->field.arr[i].str[j], fp);
         }
     }
+}
+
+void tguy_print(const TrashGuyState *st) { tguy_fprint(st, stdout); }
+
+void tguy_bprint(const TrashGuyState *st, char *buf) {
+    size_t c = 0;
+    for (size_t i = 0; i < st->field.len; i++) {
+        for (size_t j = 0; j < st->field.arr[i].len; ++j) {
+            buf[c++] = st->field.arr[i].str[j];
+        }
+    }
+    buf[c] = '\0';
 }
