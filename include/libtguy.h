@@ -16,7 +16,7 @@ typedef struct {
 
 typedef struct {
     int a1;
-    CString sprite_right, sprite_left, sprite_can;
+    CString sprite_right, sprite_left, sprite_can, sprite_space;
     TrashField text;
     TrashField field;
     int cur_frame;

@@ -46,7 +46,7 @@ static inline size_t utf8_distance(const char *begin, const char *end) {
 static inline void tguy_clear_field(TrashGuyState *st, size_t n) {
     size_t i = 1;
     for (size_t j = 0; j < (st->a1 / 2) + n; i++, j++) {
-        st->field.arr[i] = CStringConst(" ");
+        st->field.arr[i] = st->sprite_space;
     }
     for (size_t j = n; j < st->text.len; j++, i++) {
         st->field.arr[i] = st->text.arr[j];
@@ -62,6 +62,7 @@ TrashGuyState tguy_init_arr(const CString arr[], size_t len, int starting_distan
         .sprite_right = CStringConst("(> ^_^)>"),
         .sprite_left = CStringConst("<(^_^ <)"),
         .sprite_can = CStringConst("\xf0\x9f\x97\x91"),
+        .sprite_space = CStringConst(" "),
         .text = {
             .len = len,
         },
@@ -110,7 +111,7 @@ void tguy_from_frame(TrashGuyState *st, int frame) {
             c = -frame;
         /* school math */
         size_t n = ((size_t)sqrt((b * b) - 4 * c /* a */ ) - b) / 2 /* a */;
-        /* total number of frame drawn for moving the letter with index n (moving from the start to the end)*/
+        /* total number of frames drawn for moving the letter with index n (moving from the start to the end and backwards) */
         size_t frames_per_n = st->a1 + (2 * n);
         /* order of the frame in the frame series (up to frames_per_n) */
         size_t sub_frame = (frame - get_frame_lower_boundary(st->a1, n));
