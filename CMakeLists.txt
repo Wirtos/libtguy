@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(libtguy VERSION 0.0.1 LANGUAGES C)
+project(libtguy VERSION 0.0.2 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -8,6 +8,9 @@ set(CMAKE_C_EXTENSIONS OFF)
 set(TGuy_PACKAGE TGuy)
 
 add_library(${PROJECT_NAME} src/libtguy.c)
+target_compile_options(${PROJECT_NAME} PRIVATE
+        $<$<AND:$<CONFIG:Release>,$<C_COMPILER_ID:GCC,Clang,Intel>>:-O3;-fno-math-errno>
+        $<$<AND:$<CONFIG:Release>,$<C_COMPILER_ID:MSVC>>:-Ox>)
 add_library(${TGuy_PACKAGE}::TGuy ALIAS ${PROJECT_NAME})
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<INSTALL_INTERFACE:include>

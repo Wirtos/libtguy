@@ -2,7 +2,7 @@
 
 #include <math.h>
 #include <stdio.h>
-#include <string.h>
+#include <assert.h>
 
 /*
  * Create a constant containerized string
@@ -102,13 +102,14 @@ TrashGuyState tguy_init_str(const char *string, size_t len, int starting_distanc
  * Fill the state with desirable frame
  */
 void tguy_from_frame(TrashGuyState *st, int frame) {
-    /* n ^ 2 + a1n - frame = 0 */
-    if (frame < st->max_frames) {
+    /* (n ^ 2) + (a1 - 1)n - frame = 0 */
+    assert(frame < st->max_frames);
+    {
         /* int a = 1,*/
         int b = (st->a1 - 1),
             c = -frame;
         /* school math */
-        size_t n = (size_t)(-b + sqrt(pow(b, 2) - (4 /* * a */ * c))) / 2/* * a */;
+        size_t n = ((size_t)sqrt((b * b) - 4 * c /* a */ ) - b) / 2 /* a */;
         /* total number of frame drawn for moving the letter with index n (moving from the start to the end)*/
         size_t frames_per_n = st->a1 + (2 * n);
         /* order of the frame in the frame series (up to frames_per_n) */
@@ -133,9 +134,7 @@ void tguy_from_frame(TrashGuyState *st, int frame) {
 
 void tguy_fprint(const TrashGuyState *st, FILE *fp) {
     for (size_t i = 0; i < st->field.len; i++) {
-        for (size_t j = 0; j < st->field.arr[i].len; ++j) {
-            putc(st->field.arr[i].str[j], fp);
-        }
+        printf("%.*s", (int) st->field.arr[i].len, st->field.arr[i].str);
     }
 }
 
