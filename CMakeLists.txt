@@ -5,13 +5,25 @@ set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+option(TGUY_USE_FASTCLEAR "Whether to double space usage to increase speed" ON)
+
 set(TGuy_PACKAGE TGuy)
 
 add_library(${PROJECT_NAME} src/libtguy.c)
-target_compile_options(${PROJECT_NAME} PRIVATE
-        $<$<AND:$<CONFIG:Release>,$<C_COMPILER_ID:GCC,Clang,Intel>>:-O3;-fno-math-errno>
-        $<$<AND:$<CONFIG:Release>,$<C_COMPILER_ID:MSVC>>:-Ox>)
+if("${CMAKE_C_COMPILER_ID}" MATCHES "MSVC" OR ("${CMAKE_C_COMPILER_ID}" MATCHES "Intel|Clang" AND "${CMAKE_C_SIMULATE_ID}" STREQUAL "MSVC"))
+    target_compile_options(${PROJECT_NAME}
+            PRIVATE
+            $<$<CONFIG:Release>:-Ox;-fp:fast;> -W4 -WX)
+elseif(${CMAKE_C_COMPILER_ID} MATCHES "GNU|Intel|Clang")
+    target_compile_options(${PROJECT_NAME}
+            PRIVATE
+            $<$<CONFIG:Release>:-Ofast;-fno-math-errno;> $<$<C_COMPILER_ID:GNU,Clang>:-pedantic-errors;> -Wall -Wextra -Werror)
+endif()
+
 add_library(${TGuy_PACKAGE}::TGuy ALIAS ${PROJECT_NAME})
+
+target_compile_definitions(${PROJECT_NAME} PUBLIC $<$<BOOL:${TGUY_USE_FASTCLEAR}>:TGUY_FASTCLEAR>)
+
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<INSTALL_INTERFACE:include>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)

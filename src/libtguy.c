@@ -1,8 +1,9 @@
-#include "../include/libtguy.h"
+#include <libtguy.h>
 
 #include <math.h>
 #include <stdio.h>
 #include <assert.h>
+#include <string.h>
 
 /*
  * Create a constant containerized string
@@ -36,21 +37,24 @@ static inline const char *utf8_next(const char *begin, const char *end) {
 
 static inline size_t utf8_distance(const char *begin, const char *end) {
     size_t dist = 0;
-    while ((begin = utf8_next(begin, end))) dist++;
+    while ((begin = utf8_next(begin, end)) != 0) dist++;
     return dist;
 }
 
 /*
  * Clear the field(including the guy) and remove the first n chars of the string
  */
-static inline void tguy_clear_field(TrashGuyState *st, size_t n) {
-    size_t i = 1;
-    for (size_t j = 0; j < (st->a1 / 2) + n; i++, j++) {
-        st->field.arr[i] = st->sprite_space;
+static inline void tguy_clear_field(TrashGuyState *st, int n) {
+    int items_offset = st->a1 / 2 + n + 1;
+    size_t flen = st->field.len - st->text.len + n;
+    #ifdef TGUY_FASTCLEAR
+    memcpy(&st->field.data[0], &st->empty_field_.data[0], flen * sizeof(*st->field.data));
+    #else
+    for (size_t i = 1; i < flen; i++) {
+        st->field.data[i] = st->sprite_space;
     }
-    for (size_t j = n; j < st->text.len; j++, i++) {
-        st->field.arr[i] = st->text.arr[j];
-    }
+    #endif
+    memcpy(&st->field.data[items_offset], &st->text.data[n], sizeof(*st->field.data) * (st->text.len - n));
 }
 
 /*
@@ -66,19 +70,25 @@ TrashGuyState tguy_init_arr(const CString arr[], size_t len, int starting_distan
         .text = {
             .len = len,
         },
-        .field = {
-            .len = starting_distance + st.text.len + 2 /* additional 2 elements to hold the guy and can sprites */
-        },
         .cur_frame = 0, /* currently unused */
-        .max_frames = get_frame_lower_boundary(st.a1, st.text.len) + 1, /* number of frames up to the last + 1 */
     };
+    st.field.len = starting_distance + st.text.len + 2; /* additional 2 elements to hold the guy and can sprites */
+    #ifdef TGUY_FASTCLEAR
+    st.empty_field_.len = st.field.len;
+    #endif
+    /* number of frames up to the last + 1 */
+    st.max_frames = get_frame_lower_boundary(st.a1, (int) st.text.len) + 1;
 
-    st.field.arr[0] = st.sprite_can;
-    tguy_clear_field(&st, 0);
-    st.field.arr[1] = st.sprite_right;
-    for (size_t i = 0; i < st.text.len; i++) {
-        st.text.arr[i] = arr[i];
+    #ifdef TGUY_FASTCLEAR
+    st.empty_field_.data[0] = st.sprite_can;
+    for (size_t i = 1, flen = st.empty_field_.len; i < flen; i++) {
+        st.empty_field_.data[i] = st.sprite_space;
     }
+    #endif
+    for (size_t i = 0, slen = st.text.len; i < slen; i++) {
+        st.text.data[i] = arr[i];
+    }
+    tguy_clear_field(&st, 0);
     return st;
 }
 
@@ -89,14 +99,14 @@ TrashGuyState tguy_init_str(const char *string, size_t len, int starting_distanc
     TrashField tf = {.len = utf8_distance(&string[0], &string[len])};
     { /* fill the array with ranges of the string representing whole utf-8 codepoints (up to 4 per element) */
         const char *it = string;
-        for (size_t i = 0; i < tf.len; i++) {
+        for (size_t i = 0, flen = tf.len; i < flen; i++) {
             const char *next;
             next = utf8_next(it, &string[len]);
-            tf.arr[i] = (CString) {it, next - it};
+            tf.data[i] = (CString) {it, next - it};
             it = next;
         }
     }
-    return tguy_init_arr(tf.arr, tf.len, starting_distance);
+    return tguy_init_arr(tf.data, tf.len, starting_distance);
 }
 
 /*
@@ -104,49 +114,49 @@ TrashGuyState tguy_init_str(const char *string, size_t len, int starting_distanc
  */
 void tguy_from_frame(TrashGuyState *st, int frame) {
     /* (n ^ 2) + (a1 - 1)n - frame = 0 */
-    assert(frame < st->max_frames);
+    assert(frame >= 0 && frame < st->max_frames);
     {
         /* int a = 1,*/
         int b = (st->a1 - 1),
             c = -frame;
         /* school math */
-        size_t n = ((size_t)sqrt((b * b) - 4 * c /* a */ ) - b) / 2 /* a */;
+        int n = ((int) sqrt((b * b) - 4 * c /* a */ ) - b) / 2 /* a */;
+        assert(n >= 0);
         /* total number of frames drawn for moving the letter with index n (moving from the start to the end and backwards) */
-        size_t frames_per_n = st->a1 + (2 * n);
+        int frames_per_n = st->a1 + (2 * n);
         /* order of the frame in the frame series (up to frames_per_n) */
-        size_t sub_frame = (frame - get_frame_lower_boundary(st->a1, n));
+        int sub_frame = (frame - get_frame_lower_boundary(st->a1, n));
         /* if we're in the first half frames we're moving right, otherwise left */
         int right = (sub_frame < frames_per_n / 2);
         /* index yields 0 twice, the difference is whether we're moving right */
-        size_t i = right ? sub_frame : frames_per_n - sub_frame - 1;
+        int i = right ? sub_frame : frames_per_n - sub_frame - 1;
 
         st->cur_frame = frame; /* unused */
         /* if we're not moving right, then we're not drawing the element n because trashguy holds it */
         tguy_clear_field(st, n + !right);
 
         /* don't overwrite the trash can */
-        st->field.arr[i + 1] = right ? st->sprite_right : st->sprite_left;
+        st->field.data[i + 1] = right ? st->sprite_right : st->sprite_left;
         /* Draw the element trashguy holds */
         if (!right && i != 0) {
-            st->field.arr[i] = st->text.arr[n];
+            st->field.data[i] = st->text.data[n];
         }
     }
 }
 
 void tguy_fprint(const TrashGuyState *st, FILE *fp) {
-    for (size_t i = 0; i < st->field.len; i++) {
-        printf("%.*s", (int) st->field.arr[i].len, st->field.arr[i].str);
+    for (size_t i = 0, flen = st->field.len; i < flen; i++) {
+        fprintf(fp, "%.*s", (int) st->field.data[i].len, st->field.data[i].str);
     }
 }
 
 void tguy_print(const TrashGuyState *st) { tguy_fprint(st, stdout); }
 
 void tguy_bprint(const TrashGuyState *st, char *buf) {
-    size_t c = 0;
-    for (size_t i = 0; i < st->field.len; i++) {
-        for (size_t j = 0; j < st->field.arr[i].len; ++j) {
-            buf[c++] = st->field.arr[i].str[j];
+    for (size_t i = 0, flen = st->field.data->len; i < flen; i++) {
+        for (size_t j = 0, slen = st->field.data[i].len; j < slen; j++) {
+            *buf++ = st->field.data[i].str[j];
         }
     }
-    buf[c] = '\0';
+    *buf = '\0';
 }
