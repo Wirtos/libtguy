@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.10)
-project(libtguy VERSION 0.1.0 LANGUAGES C)
+project(libtguy VERSION 0.2.0 LANGUAGES C)
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -22,7 +22,7 @@ endif()
 
 add_library(${TGuy_PACKAGE}::TGuy ALIAS ${PROJECT_NAME})
 
-target_compile_definitions(${PROJECT_NAME} PUBLIC $<$<BOOL:${TGUY_USE_FASTCLEAR}>:TGUY_FASTCLEAR>)
+target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<BOOL:${TGUY_USE_FASTCLEAR}>:TGUY_FASTCLEAR>)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<INSTALL_INTERFACE:include>
