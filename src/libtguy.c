@@ -211,9 +211,10 @@ void tguy_fprint(const TrashGuyState *st, FILE *fp) {
 void tguy_print(const TrashGuyState *st) { tguy_fprint(st, stdout); }
 
 void tguy_bprint(const TrashGuyState *st, char *buf) {
-    for (size_t i = 0, flen = st->field.data->len; i < flen; i++) {
+    for (size_t i = 0, flen = st->field.len; i < flen; i++) {
+        const char *s = st->field.data[i].str;
         for (size_t j = 0, slen = st->field.data[i].len; j < slen; j++) {
-            *buf++ = st->field.data[i].str[j];
+            *buf++ = s[j];
         }
     }
     *buf = '\0';
