@@ -18,7 +18,7 @@ LIBTGUY_EXPORT void tguy_free(TrashGuyState *st);
 
 LIBTGUY_EXPORT void tguy_from_frame(TrashGuyState *st, int frame);
 LIBTGUY_EXPORT int tguy_get_frames_count(const TrashGuyState *st);
-LIBTGUY_EXPORT size_t tguy_get_bsize(const TrashGuyState *st);
+LIBTGUY_EXPORT size_t tguy_get_bsize(TrashGuyState *st);
 
 LIBTGUY_EXPORT void tguy_fprint(const TrashGuyState *st, FILE *fp);
 LIBTGUY_EXPORT void tguy_print(const TrashGuyState *st);

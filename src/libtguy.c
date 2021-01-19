@@ -17,7 +17,7 @@ typedef struct {
 
 struct TrashGuyState {
     void *data_;
-    int a1;
+    int initial_frames_count;
     CString sprite_right, sprite_left, sprite_can, sprite_space;
     TrashField text;
     TrashField field;
@@ -26,6 +26,7 @@ struct TrashGuyState {
     #endif
     int cur_frame;
     int max_frames;
+    size_t bufsize;
 
 };
 
@@ -64,7 +65,7 @@ static inline size_t utf8_distance(const char *begin, const char *end) {
  * Clear the field(including the guy) and remove the first n chars of the string
  */
 static inline void tguy_clear_field(TrashGuyState *st, int n) {
-    int items_offset = st->a1 / 2 + n + 1;
+    int items_offset = st->initial_frames_count / 2 + n + 1;
     size_t flen = st->field.len - st->text.len + n;
     #ifdef TGUY_FASTCLEAR
     memcpy(&st->field.data[0], &st->empty_field_.data[0], flen * sizeof(*st->field.data));
@@ -84,7 +85,7 @@ TrashGuyState *tguy_init_arr(const CString arr[], size_t len, int starting_dista
     st = malloc(sizeof(*st));
     if (st == NULL) goto fail;
     {
-        st->a1 = (starting_distance + 1) * 2;
+        st->initial_frames_count = (starting_distance + 1) * 2;
         st->sprite_right = CStringConst("(> ^_^)>");
         st->sprite_left = CStringConst("<(^_^ <)");
         st->sprite_can = CStringConst("\xf0\x9f\x97\x91");
@@ -95,10 +96,12 @@ TrashGuyState *tguy_init_arr(const CString arr[], size_t len, int starting_dista
         #ifdef TGUY_FASTCLEAR
         st->empty_field_.len = st->field.len;
         #endif
+        /* not computed yet and may not be computed at all */
+        st->bufsize = 0;
         /* currently unused */
         st->cur_frame = 0;
         /* number of frames up to the last + 1 */
-        st->max_frames = get_frame_lower_boundary(st->a1, (int) st->text.len) + 1;
+        st->max_frames = get_frame_lower_boundary(st->initial_frames_count, (int) st->text.len) + 1;
         st->data_ = NULL;
     }
     {
@@ -175,15 +178,15 @@ void tguy_from_frame(TrashGuyState *st, int frame) {
     assert(frame >= 0 && frame < st->max_frames);
     {
         /* int a = 1,*/
-        int b = (st->a1 - 1),
+        int b = (st->initial_frames_count - 1),
             c = -frame;
         /* school math */
         int n = ((int) sqrt((b * b) - 4 * c /* a */ ) - b) / 2 /* a */;
         assert(n >= 0);
         /* total number of frames drawn for moving the letter with index n (moving from the start to the end and backwards) */
-        int frames_per_n = st->a1 + (2 * n);
+        int frames_per_n = st->initial_frames_count + (2 * n);
         /* order of the frame in the frame series (up to frames_per_n) */
-        int sub_frame = (frame - get_frame_lower_boundary(st->a1, n));
+        int sub_frame = (frame - get_frame_lower_boundary(st->initial_frames_count, n));
         /* if we're in the first half frames we're moving right, otherwise left */
         int right = (sub_frame < frames_per_n / 2);
         /* index yields 0 twice, the difference is whether we're moving right */
@@ -223,11 +226,30 @@ void tguy_bprint(const TrashGuyState *st, char *buf) {
 int tguy_get_frames_count(const TrashGuyState *st) {
     return st->max_frames;
 }
+#ifndef max
+    #define max(a, b) ((a) > (b) ? (a) : (b))
+#endif
 
-size_t tguy_get_bsize(const TrashGuyState *st) {
+size_t tguy_get_bsize(TrashGuyState *st) {
+    /* nul terminator */
     size_t sz = 1;
-    for (size_t i = 0, flen = st->field.len; i < flen; i++) {
-        sz += st->field.data[i].len;
+    if (st->bufsize){
+        return st->bufsize;
     }
+    /* overall text length */
+    for (size_t i = 0, tlen = st->text.len; i < tlen; i++) {
+        /* text letter will be replaced with space (filler sprite) eventually
+         * by choosing the largest ensure the buffer is large enough */
+        sz += max(st->text.data[i].len, st->sprite_space.len);
+    }
+    /* overall free space length */
+    for (size_t i = 0, slen = (st->initial_frames_count / 2) - 1; i < slen; i++) {
+        sz += st->sprite_space.len;
+    }
+    /* singleton sprites lengths */
+    sz += st->sprite_can.len;
+    sz += max(st->sprite_right.len, st->sprite_left.len);
+
+    st->bufsize = sz;
     return sz;
 }
