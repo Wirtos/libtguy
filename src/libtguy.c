@@ -225,7 +225,7 @@ int tguy_get_frames_count(const TrashGuyState *st) {
 }
 
 size_t tguy_get_bsize(const TrashGuyState *st) {
-    size_t sz = 0;
+    size_t sz = 1;
     for (size_t i = 0, flen = st->field.len; i < flen; i++) {
         sz += st->field.data[i].len;
     }
