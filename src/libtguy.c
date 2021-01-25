@@ -106,8 +106,8 @@ TrashGuyState *tguy_init_arr(const CString arr[], size_t len, int starting_dista
     }
     {
         size_t fields_data_sz = (st->text.len + st->field.len
-            #ifdef TGUY_FASTCLEAR
-            + st->empty_field_.len
+                                 #ifdef TGUY_FASTCLEAR
+                                 + st->empty_field_.len
             #endif
         );
 
@@ -142,7 +142,9 @@ TrashGuyState *tguy_init_arr(const CString arr[], size_t len, int starting_dista
 TrashGuyState *tguy_init_str(const char *string, size_t len, int starting_distance) {
     TrashGuyState *st;
     CString *strarr;
-    size_t flen = utf8_distance(&string[0], &string[len]);
+    size_t flen;
+    len = (len == ((size_t) -1)) ? strlen(string) : len;
+    flen = utf8_distance(&string[0], &string[len]);
     strarr = malloc(sizeof(*strarr) * flen);
     if (strarr == NULL) return NULL;
     { /* fill the array with ranges of the string representing whole utf-8 codepoints (up to 4 per element) */
