@@ -17,7 +17,7 @@ if("${CMAKE_C_COMPILER_ID}" MATCHES "MSVC" OR ("${CMAKE_C_COMPILER_ID}" MATCHES 
 elseif(${CMAKE_C_COMPILER_ID} MATCHES "GNU|Intel|Clang")
     target_compile_options(${PROJECT_NAME}
             PRIVATE
-            $<$<CONFIG:Release>:-Ofast;-fno-math-errno;> $<$<C_COMPILER_ID:GNU,Clang>:-pedantic-errors;> -Wall -Wextra -Werror)
+            $<$<CONFIG:Release>:-O3;-fno-math-errno;> $<$<C_COMPILER_ID:GNU,Clang>:-pedantic-errors;> -Wall -Wextra -Werror)
 endif()
 
 add_library(${TGuy_PACKAGE}::TGuy ALIAS ${PROJECT_NAME})
