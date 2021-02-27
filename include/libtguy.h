@@ -5,6 +5,10 @@
 #include <stdio.h>
 #include <libtguy_export.h>
 
+#define TGUY_VER_MAJOR 0
+#define TGUY_VER_MINOR 3
+#define TGUY_VER_PATCH 0
+
 typedef struct {
     const char *str;
     size_t len;
@@ -12,8 +16,8 @@ typedef struct {
 
 typedef struct TrashGuyState TrashGuyState;
 
-LIBTGUY_EXPORT TrashGuyState *tguy_init_arr(const CString arr[], size_t len, int starting_distance);
-LIBTGUY_EXPORT TrashGuyState *tguy_init_str(const char *string, size_t len, int starting_distance);
+LIBTGUY_EXPORT TrashGuyState *tguy_from_arr(const CString *arr, size_t len, int starting_distance);
+LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8(const char *string, size_t len, int starting_distance);
 LIBTGUY_EXPORT void tguy_free(TrashGuyState *st);
 
 LIBTGUY_EXPORT void tguy_from_frame(TrashGuyState *st, int frame);

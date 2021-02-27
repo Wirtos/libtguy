@@ -1,5 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
-project(libtguy VERSION 0.2.1 LANGUAGES C)
+
+foreach(vspec IN ITEMS MAJOR MINOR PATCH)
+    file(STRINGS include/libtguy.h vspec REGEX "#define TGUY_VER_${vspec} ([0-9]+)")
+    string(SUBSTRING "${vspec}" 23 -1 vspec)
+    list(APPEND TGUY_VER ${vspec})
+endforeach()
+string(JOIN "." TGUY_VER ${TGUY_VER})
+
+project(libtguy LANGUAGES C VERSION ${TGUY_VER})
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)

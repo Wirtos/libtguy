@@ -80,7 +80,7 @@ static inline void tguy_clear_field(TrashGuyState *st, int n) {
 /*
  * initialize state from array of strings
  */
-TrashGuyState *tguy_init_arr(const CString arr[], size_t len, int starting_distance) {
+TrashGuyState *tguy_from_arr(const CString *arr, size_t len, int starting_distance) {
     struct TrashGuyState *st;
     st = malloc(sizeof(*st));
     if (st == NULL) goto fail;
@@ -139,7 +139,7 @@ TrashGuyState *tguy_init_arr(const CString arr[], size_t len, int starting_dista
 /*
  * initialize state from utf-8 string (each codepoint will be used as an element)
  */
-TrashGuyState *tguy_init_str(const char *string, size_t len, int starting_distance) {
+TrashGuyState *tguy_from_utf8(const char *string, size_t len, int starting_distance) {
     TrashGuyState *st;
     CString *strarr;
     size_t flen;
@@ -156,7 +156,7 @@ TrashGuyState *tguy_init_str(const char *string, size_t len, int starting_distan
             it = next;
         }
     }
-    st = tguy_init_arr(strarr, flen, starting_distance);
+    st = tguy_from_arr(strarr, flen, starting_distance);
     if (st == NULL) {
         free(strarr);
     } else {
