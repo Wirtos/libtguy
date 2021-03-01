@@ -1,13 +1,11 @@
 cmake_minimum_required(VERSION 3.10)
 
-foreach(vspec IN ITEMS MAJOR MINOR PATCH)
-    file(STRINGS include/libtguy.h vspec REGEX "#define TGUY_VER_${vspec} ([0-9]+)")
-    string(SUBSTRING "${vspec}" 23 -1 vspec)
-    list(APPEND TGUY_VER ${vspec})
-endforeach()
-string(JOIN "." TGUY_VER ${TGUY_VER})
+include(cmake/utils.cmake)
+get_version_string(include/libtguy.h "TGUY" TGUY_VER)
 
 project(libtguy LANGUAGES C VERSION ${TGUY_VER})
+
+message(DEBUG "libtguy ${TGUY_VER}")
 
 set(CMAKE_C_STANDARD 99)
 set(CMAKE_C_STANDARD_REQUIRED ON)
@@ -15,36 +13,45 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 option(BUILD_SHARED_LIBS "Whether to build a dynamic library" OFF)
 option(TGUY_USE_FASTCLEAR "Whether to double space usage to increase speed" ON)
-set(TGuy_PACKAGE TGuy)
+
+if (${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install")
+endif ()
 
 add_library(${PROJECT_NAME} src/libtguy.c)
-if("${CMAKE_C_COMPILER_ID}" MATCHES "MSVC" OR ("${CMAKE_C_COMPILER_ID}" MATCHES "Intel|Clang" AND "${CMAKE_C_SIMULATE_ID}" STREQUAL "MSVC"))
+if ("${CMAKE_C_COMPILER_ID}" MATCHES "MSVC" OR "${CMAKE_C_SIMULATE_ID}" STREQUAL "MSVC")
     target_compile_options(${PROJECT_NAME}
             PRIVATE
-            $<$<CONFIG:Release>:-Ox;-fp:fast;> -W4 -WX)
-elseif(${CMAKE_C_COMPILER_ID} MATCHES "GNU|Intel|Clang")
+            $<$<CONFIG:Release>:-fp:fast> -W4 -WX)
+elseif (${CMAKE_C_COMPILER_ID} MATCHES "GNU|Intel|Clang" OR ${CMAKE_C_SIMULATE_ID} MATCHES "GNU")
     target_compile_options(${PROJECT_NAME}
             PRIVATE
-            $<$<CONFIG:Release>:-O3;-fno-math-errno;> $<$<C_COMPILER_ID:GNU,Clang>:-pedantic-errors;> -Wall -Wextra -Werror)
-endif()
+            $<$<CONFIG:Release>:-fno-math-errno> $<$<C_COMPILER_ID:GNU,Clang>:-pedantic-errors> -Wall -Wextra -Werror)
+endif ()
 
-add_library(${TGuy_PACKAGE}::TGuy ALIAS ${PROJECT_NAME})
+add_library(TGuy::TGuy ALIAS ${PROJECT_NAME})
 
-target_compile_definitions(${PROJECT_NAME} PRIVATE $<$<BOOL:${TGUY_USE_FASTCLEAR}>:TGUY_FASTCLEAR>)
+if (TGUY_USE_FASTCLEAR)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_FASTCLEAR)
+endif ()
 
 include(GNUInstallDirs)
 include(GenerateExportHeader)
-generate_export_header(${PROJECT_NAME} EXPORT_FILE_NAME ${CMAKE_CURRENT_BINARY_DIR}/exports/${PROJECT_NAME}_export.h)
+generate_export_header(${PROJECT_NAME})
 
 target_include_directories(${PROJECT_NAME} PUBLIC
         $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}>
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/exports>)
+        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>)
+
 # export tguy target as TGuy
 # declare headers to be installed
+set_property(TARGET ${PROJECT_NAME}
+        PROPERTY PUBLIC_HEADER
+        include/libtguy.h
+        "${CMAKE_CURRENT_BINARY_DIR}/libtguy_export.h")
 set_target_properties(${PROJECT_NAME} PROPERTIES
         EXPORT_NAME TGuy
-        PUBLIC_HEADER "${CMAKE_CURRENT_SOURCE_DIR}/include/libtguy.h;${CMAKE_CURRENT_BINARY_DIR}/exports/${PROJECT_NAME}_export.h"
         PREFIX "")
 
 include(CheckLibraryExists)
@@ -57,7 +64,7 @@ endif ()
 
 install(TARGETS
         ${PROJECT_NAME}
-        EXPORT ${TGuy_PACKAGE}Config
+        EXPORT TGuyConfig
         ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
         LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
         PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
@@ -66,12 +73,12 @@ install(TARGETS
 
 export(TARGETS
         ${PROJECT_NAME}
-        NAMESPACE ${TGuy_PACKAGE}::
+        NAMESPACE TGuy::
         FILE "${CMAKE_CURRENT_BINARY_DIR}/TGuyConfig.cmake"
         )
 
 install(EXPORT
-        ${TGuy_PACKAGE}Config
+        TGuyConfig
         DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake"
-        NAMESPACE ${TGuy_PACKAGE}::
+        NAMESPACE TGuy::
         )
