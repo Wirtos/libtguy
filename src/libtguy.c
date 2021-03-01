@@ -5,27 +5,23 @@
 #include <string.h>
 #include <stdlib.h>
 
-/*
- * Create a constant containerized string
- */
-#define CStringConst(str) ((CString){str, sizeof(str) - 1})
 
 typedef struct {
-    CString *data;
+    TGString *data;
     size_t len;
 } TrashField;
 
 struct TrashGuyState {
     void *data_;
-    int initial_frames_count;
-    CString sprite_right, sprite_left, sprite_can, sprite_space;
+    unsigned initial_frames_count;
+    TGString sprite_right, sprite_left, sprite_can, sprite_space;
     TrashField text;
     TrashField field;
     #ifdef TGUY_FASTCLEAR
     TrashField empty_field_;
     #endif
-    int cur_frame;
-    int max_frames;
+    unsigned cur_frame;
+    unsigned max_frames;
     size_t bufsize;
 
 };
@@ -33,8 +29,8 @@ struct TrashGuyState {
 /*
  * Get the first frame index involving working with the element n
  */
-static inline int get_frame_lower_boundary(int a1, int n) {
-    return n * (a1 + n - 1);
+static inline unsigned get_frame_lower_boundary(unsigned initial_frames_count, unsigned n_elem) {
+    return n_elem * (initial_frames_count + n_elem - 1);
 }
 
 static inline const char *utf8_next(const char *begin, const char *end) {
@@ -64,9 +60,9 @@ static inline size_t utf8_distance(const char *begin, const char *end) {
 /*
  * Clear the field(including the guy) and remove the first n chars of the string
  */
-static inline void tguy_clear_field(TrashGuyState *st, int n) {
-    int items_offset = st->initial_frames_count / 2 + n + 1;
-    size_t flen = st->field.len - st->text.len + n;
+static inline void tguy_clear_field(TrashGuyState *st, unsigned n_erase_elements) {
+    unsigned items_offset = st->initial_frames_count / 2 + n_erase_elements + 1;
+    size_t flen = st->field.len - st->text.len + n_erase_elements;
     #ifdef TGUY_FASTCLEAR
     memcpy(&st->field.data[0], &st->empty_field_.data[0], flen * sizeof(*st->field.data));
     #else
@@ -74,39 +70,41 @@ static inline void tguy_clear_field(TrashGuyState *st, int n) {
         st->field.data[i] = st->sprite_space;
     }
     #endif
-    memcpy(&st->field.data[items_offset], &st->text.data[n], sizeof(*st->field.data) * (st->text.len - n));
+    memcpy(&st->field.data[items_offset], &st->text.data[n_erase_elements],
+        sizeof(*st->field.data) * (st->text.len - n_erase_elements));
 }
 
 /*
  * initialize state from array of strings
  */
-TrashGuyState *tguy_from_arr(const CString *arr, size_t len, int starting_distance) {
+TrashGuyState *tguy_from_arr_ext(const TGString *arr, size_t len, unsigned spacing,
+    TGString sprite_space, TGString sprite_can, TGString sprite_left, TGString sprite_right) {
     struct TrashGuyState *st;
     st = malloc(sizeof(*st));
     if (st == NULL) goto fail;
     {
-        st->initial_frames_count = (starting_distance + 1) * 2;
-        st->sprite_right = CStringConst("(> ^_^)>");
-        st->sprite_left = CStringConst("<(^_^ <)");
-        st->sprite_can = CStringConst("\xf0\x9f\x97\x91");
-        st->sprite_space = CStringConst(" ");
+        st->initial_frames_count = (spacing + 1) * 2;
+        st->sprite_right = sprite_right;
+        st->sprite_left = sprite_left;
+        st->sprite_can = sprite_can;
+        st->sprite_space = sprite_space;
         st->text.len = len;
         /* additional 2 elements to hold the guy and can sprites */
-        st->field.len = starting_distance + st->text.len + 2;
+        st->field.len = spacing + st->text.len + 2;
         #ifdef TGUY_FASTCLEAR
         st->empty_field_.len = st->field.len;
         #endif
         /* not computed yet and may not be computed at all */
         st->bufsize = 0;
         /* currently unused */
-        st->cur_frame = 0;
+        st->cur_frame = (unsigned) -1;
         /* number of frames up to the last + 1 */
-        st->max_frames = get_frame_lower_boundary(st->initial_frames_count, (int) st->text.len) + 1;
+        st->max_frames = get_frame_lower_boundary(st->initial_frames_count, st->text.len) + 1;
         st->data_ = NULL;
     }
     {
         size_t fields_data_sz = (st->text.len + st->field.len
-                                 #ifdef TGUY_FASTCLEAR
+            #ifdef TGUY_FASTCLEAR
                                  + st->empty_field_.len
             #endif
         );
@@ -136,12 +134,22 @@ TrashGuyState *tguy_from_arr(const CString *arr, size_t len, int starting_distan
     return NULL;
 }
 
+TrashGuyState *tguy_from_arr(const TGString *arr, size_t len, unsigned spacing) {
+    return tguy_from_arr_ext(arr, len, spacing,
+        TGStringConst(" "),
+        TGStringConst("\xf0\x9f\x97\x91"),
+        TGStringConst("<(^_^ <)"),
+        TGStringConst("(> ^_^)>")
+    );
+}
+
+
 /*
  * initialize state from utf-8 string (each codepoint will be used as an element)
  */
-TrashGuyState *tguy_from_utf8(const char *string, size_t len, int starting_distance) {
+TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) {
     TrashGuyState *st;
-    CString *strarr;
+    TGString *strarr;
     size_t flen;
     len = (len == ((size_t) -1)) ? strlen(string) : len;
     flen = utf8_distance(&string[0], &string[len]);
@@ -152,11 +160,11 @@ TrashGuyState *tguy_from_utf8(const char *string, size_t len, int starting_dista
         for (size_t i = 0; i < flen; i++) {
             const char *next;
             next = utf8_next(it, &string[len]);
-            strarr[i] = (CString) {it, next - it};
+            strarr[i] = (TGString) {it, next - it};
             it = next;
         }
     }
-    st = tguy_from_arr(strarr, flen, starting_distance);
+    st = tguy_from_arr(strarr, flen, spacing);
     if (st == NULL) {
         free(strarr);
     } else {
@@ -175,24 +183,25 @@ void tguy_free(TrashGuyState *st) {
 /*
  * Fill the state with desirable frame
  */
-void tguy_from_frame(TrashGuyState *st, int frame) {
+void tguy_set_frame(TrashGuyState *st, unsigned frame) {
     /* (n ^ 2) + (a1 - 1)n - frame = 0 */
     assert(frame >= 0 && frame < st->max_frames);
+    if (st->cur_frame == frame) return;
     {
         /* int a = 1,*/
-        int b = (st->initial_frames_count - 1),
-            c = -frame;
+        unsigned b = (st->initial_frames_count - 1),
+            c = frame;
         /* school math */
-        int n = ((int) sqrt((b * b) - 4 * c /* a */ ) - b) / 2 /* a */;
+        unsigned n = ((unsigned) sqrt((b * b) + (c << 2)/* a */ ) - b) / 2 /* a */;
         assert(n >= 0);
         /* total number of frames drawn for moving the letter with index n (moving from the start to the end and backwards) */
-        int frames_per_n = st->initial_frames_count + (2 * n);
+        unsigned frames_per_n = st->initial_frames_count + (2 * n);
         /* order of the frame in the frame series (up to frames_per_n) */
-        int sub_frame = (frame - get_frame_lower_boundary(st->initial_frames_count, n));
+        unsigned sub_frame = (frame - get_frame_lower_boundary(st->initial_frames_count, n));
         /* if we're in the first half frames we're moving right, otherwise left */
-        int right = (sub_frame < frames_per_n / 2);
+        unsigned right = (sub_frame < frames_per_n / 2);
         /* index yields 0 twice, the difference is whether we're moving right */
-        int i = right ? sub_frame : frames_per_n - sub_frame - 1;
+        unsigned i = right ? sub_frame : frames_per_n - sub_frame - 1;
 
         st->cur_frame = frame; /* unused */
         /* if we're not moving right, then we're not drawing the element n because trashguy holds it */
@@ -225,7 +234,7 @@ void tguy_bprint(const TrashGuyState *st, char *buf) {
     *buf = '\0';
 }
 
-int tguy_get_frames_count(const TrashGuyState *st) {
+unsigned tguy_get_frames_count(const TrashGuyState *st) {
     return st->max_frames;
 }
 #ifndef max

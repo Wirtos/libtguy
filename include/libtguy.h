@@ -12,19 +12,27 @@
 typedef struct {
     const char *str;
     size_t len;
-} CString;
+} TGString;
+
+/*
+ * Create a constant containerized string
+ */
+#define TGStringConst(str) ((TGString){str, sizeof(str) - 1})
 
 typedef struct TrashGuyState TrashGuyState;
 
-LIBTGUY_EXPORT TrashGuyState *tguy_from_arr(const CString *arr, size_t len, int starting_distance);
-LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8(const char *string, size_t len, int starting_distance);
+LIBTGUY_EXPORT TrashGuyState *tguy_from_arr_ext(const TGString *arr, size_t len, unsigned spacing,
+        TGString sprite_space, TGString sprite_can, TGString sprite_left, TGString sprite_right);
+LIBTGUY_EXPORT TrashGuyState *tguy_from_arr(const TGString *arr, size_t len, unsigned spacing);
+LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing);
 LIBTGUY_EXPORT void tguy_free(TrashGuyState *st);
 
-LIBTGUY_EXPORT void tguy_from_frame(TrashGuyState *st, int frame);
-LIBTGUY_EXPORT int tguy_get_frames_count(const TrashGuyState *st);
+LIBTGUY_EXPORT void tguy_set_frame(TrashGuyState *st, unsigned frame);
+LIBTGUY_EXPORT unsigned tguy_get_frames_count(const TrashGuyState *st);
 LIBTGUY_EXPORT size_t tguy_get_bsize(TrashGuyState *st);
 
 LIBTGUY_EXPORT void tguy_fprint(const TrashGuyState *st, FILE *fp);
 LIBTGUY_EXPORT void tguy_print(const TrashGuyState *st);
 LIBTGUY_EXPORT void tguy_bprint(const TrashGuyState * st, char *buf);
-#endif //LIBTGUY_H
+
+#endif // LIBTGUY_H
