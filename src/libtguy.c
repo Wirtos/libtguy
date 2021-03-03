@@ -77,7 +77,7 @@ static inline void tguy_clear_field(TrashGuyState *st, unsigned n_erase_elements
  * initialize state from array of strings
  */
 TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacing,
-    TGString sprite_space, TGString sprite_can, TGString sprite_left, TGString sprite_right) {
+    TGString sprite_space, TGString sprite_can, TGString sprite_right, TGString sprite_left) {
     struct TrashGuyState *st;
     assert(len < (unsigned) -1);
     st = malloc(sizeof(*st));
