@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 
-include(cmake/utils.cmake)
+include(cmake/GetVersionString.cmake)
 get_version_string(include/libtguy.h "TGUY" TGUY_VER)
 
 project(libtguy LANGUAGES C VERSION ${TGUY_VER})
@@ -13,6 +13,9 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 option(BUILD_SHARED_LIBS "Whether to build a dynamic library" OFF)
 option(TGUY_USE_FASTCLEAR "Whether to double space usage to increase speed" ON)
+
+include(cmake/PreventInSourceBuild.cmake)
+prevent_in_source_build()
 
 if (${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
     set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install")
