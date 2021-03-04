@@ -25,17 +25,16 @@ if (${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
 endif ()
 
 add_library(${PROJECT_NAME} src/libtguy.c)
+add_library(TGuy::TGuy ALIAS ${PROJECT_NAME})
 if ("${CMAKE_C_COMPILER_ID}" MATCHES "MSVC" OR "${CMAKE_C_SIMULATE_ID}" STREQUAL "MSVC")
     target_compile_options(${PROJECT_NAME}
             PRIVATE
             $<$<CONFIG:Release>:-fp:fast> -W4 -WX)
-elseif (${CMAKE_C_COMPILER_ID} MATCHES "GNU|Intel|Clang" OR ${CMAKE_C_SIMULATE_ID} MATCHES "GNU")
+elseif ("${CMAKE_C_COMPILER_ID}" MATCHES "GNU|Intel|Clang" OR "${CMAKE_C_SIMULATE_ID}" MATCHES "GNU")
     target_compile_options(${PROJECT_NAME}
             PRIVATE
             $<$<CONFIG:Release>:-fno-math-errno> $<$<C_COMPILER_ID:GNU,Clang>:-pedantic-errors> -Wall -Wextra -Werror)
 endif ()
-
-add_library(TGuy::TGuy ALIAS ${PROJECT_NAME})
 
 if (TGUY_USE_FASTCLEAR)
     target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_FASTCLEAR)
@@ -49,6 +48,8 @@ check_library_exists(m sqrt "" LIBM_EXISTS)
 if (LIBM_EXISTS)
     target_link_libraries(${PROJECT_NAME} PRIVATE m)
 endif ()
+add_subdirectory(utf8proc)
+target_link_libraries(${PROJECT_NAME} PRIVATE utf8proc)
 
 include(GNUInstallDirs)
 

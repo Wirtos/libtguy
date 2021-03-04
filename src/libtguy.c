@@ -4,6 +4,7 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <utf8proc.h>
 
 typedef struct {
     TGString *data;
@@ -29,30 +30,6 @@ struct TrashGuyState {
  */
 static inline unsigned get_frame_lower_boundary(unsigned initial_frames_count, unsigned n_elem) {
     return n_elem * (initial_frames_count + n_elem - 1);
-}
-
-static inline const char *utf8_next(const char *begin, const char *end) {
-    if (begin == end) {
-        return NULL;
-    }
-
-    if ((*begin & 0x80) == 0x0) {
-        begin += 1;
-    } else if ((*begin & 0xE0) == 0xC0) {
-        begin += 2;
-    } else if ((*begin & 0xF0) == 0xE0) {
-        begin += 3;
-    } else if ((*begin & 0xF8) == 0xF0) {
-        begin += 4;
-    }
-
-    return begin;
-}
-
-static inline size_t utf8_distance(const char *begin, const char *end) {
-    size_t dist = 0;
-    while ((begin = utf8_next(begin, end)) != 0) dist++;
-    return dist;
 }
 
 /*
@@ -138,8 +115,8 @@ TrashGuyState *tguy_from_arr(const TGString *arr, size_t len, unsigned spacing) 
     return tguy_from_arr_ex(arr, len, spacing,
         TGStringConst(" "),
         TGStringConst("\xf0\x9f\x97\x91"),
-        TGStringConst("<(^_^ <)"),
-        TGStringConst("(> ^_^)>")
+        TGStringConst("(> ^_^)>"),
+        TGStringConst("<(^_^ <)")
     );
 }
 
@@ -149,18 +126,24 @@ TrashGuyState *tguy_from_arr(const TGString *arr, size_t len, unsigned spacing) 
 TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) {
     TrashGuyState *st;
     TGString *strarr;
-    size_t flen;
+    size_t flen = 0;
     len = (len == (size_t) -1) ? strlen(string) : len;
-    flen = utf8_distance(&string[0], &string[len]);
+    {
+        int read_bytes = 0;
+        unsigned start, end;
+        while (utf8proc_iterate_graphemes((unsigned char *)string, &read_bytes, len, &start, &end)) {
+            flen++;
+        }
+    }
     strarr = malloc(sizeof(*strarr) * flen);
     if (strarr == NULL) return NULL;
-    { /* fill the array with ranges of the string representing whole utf-8 codepoints (up to 4 per element) */
-        const char *it = string;
-        for (size_t i = 0; i < flen; i++) {
-            const char *next;
-            next = utf8_next(it, &string[len]);
-            strarr[i] = (TGString) {it, next - it};
-            it = next;
+    { /* fill the array with ranges of the string representing whole utf-8 grapheme clusters */
+        size_t i = 0;
+        int read_bytes = 0;
+        unsigned start, end;
+        while (utf8proc_iterate_graphemes((unsigned char *)string, &read_bytes, len, &start, &end)) {
+            strarr[i] = (TGString){&string[start], end - start};
+            i++;
         }
     }
     st = tguy_from_arr(strarr, flen, spacing);
@@ -185,7 +168,7 @@ void tguy_free(TrashGuyState *st) {
 void tguy_set_frame(TrashGuyState *st, unsigned frame) {
     /*         a                        b                              c       */
     /* (element_index)^2 + (initial_frames_count - 1)element_index - frame = 0 */
-    assert(frame >= 0 && frame < st->max_frames);
+    assert(frame < st->max_frames);
     if (st->cur_frame == frame) return;
     {
         /* unsigned a = 1,*/
