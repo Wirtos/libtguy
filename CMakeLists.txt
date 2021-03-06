@@ -96,11 +96,11 @@ if (${TGUY_BUILD_DOCS})
         set(DOXYGEN_GENERATE_MAN FALSE CACHE BOOL "Whether to generate manpage when building docs" FORCE)
         set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
         doxygen_add_docs(
-                libtguy_docs
+                _libtguy_docs
                 include
                 COMMENT "Generate docs"
         )
-        add_custom_command(OUTPUT "${DOXYGEN_OUTPUT_DIRECTORY}" DEPENDS libtguy_docs)
+        add_custom_target(libtguy_docs ALL DEPENDS _libtguy_docs)
         install(DIRECTORY "${DOXYGEN_OUTPUT_DIRECTORY}" TYPE DOC)
     endif ()
 endif ()
