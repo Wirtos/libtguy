@@ -100,7 +100,7 @@ if (${TGUY_BUILD_DOCS})
                 include
                 COMMENT "Generate docs"
         )
-        add_custom_target(libtguy_docs ALL DEPENDS _libtguy_docs)
+        add_custom_target(libtguy_docs ALL DEPENDS _libtguy_docs COMMAND "" BYPRODUCTS "${DOXYGEN_OUTPUT_DIRECTORY}")
         install(DIRECTORY "${DOXYGEN_OUTPUT_DIRECTORY}" TYPE DOC)
     endif ()
 endif ()
