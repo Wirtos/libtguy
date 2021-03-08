@@ -25,7 +25,7 @@ set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 add_subdirectory(utf8proc)
 set(BUILD_SHARED_LIBS ${TGUY_BUILD_SHARED_LIBS})
 
-if (${CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT})
+if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install" CACHE PATH "" FORCE)
 endif ()
 
@@ -91,9 +91,6 @@ install(EXPORT
 if (${TGUY_BUILD_DOCS})
     find_package(Doxygen REQUIRED)
     if (${DOXYGEN_FOUND})
-        set(DOXYGEN_GENERATE_HTML TRUE CACHE BOOL "Whether to generate HTML when building docs" FORCE)
-        set(DOXYGEN_GENERATE_LATEX FALSE CACHE BOOL "Whether to generate LaTeX when building docs" FORCE)
-        set(DOXYGEN_GENERATE_MAN FALSE CACHE BOOL "Whether to generate manpage when building docs" FORCE)
         set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
         doxygen_add_docs(
                 _libtguy_docs
