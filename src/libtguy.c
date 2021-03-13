@@ -26,9 +26,9 @@ struct TrashGuyState {
 };
 
 /**
- *  Returns first frame of sequence of frames involving the work with element of element_index
+ *  Returns first frame of sequence of frames involving the work with element element_index of
  *  (\ref TrashGuyState::text). \n
- *  You can perceive this equation as a parabola opened to the right, where each y is element index and x is frame,
+ *  You can perceive this function as a parabola, where each x is element_index and y is returned frame,
  *  so (get_frame_lower_boundary(const, i + 1) - get_frame_lower_boundary(const, i)) will yield number
  *  of frames needed to process element with index i. \n
  *  Initial number of frames is computed as
@@ -61,7 +61,6 @@ static inline void tguy_clear_field(TrashGuyState *st, unsigned n_erase_elements
     memcpy(&st->field.data[items_offset], &st->text.data[n_erase_elements],
         sizeof(*st->field.data) * (st->text.len - n_erase_elements));
 }
-
 
 TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacing,
     TGString sprite_space, TGString sprite_can, TGString sprite_right, TGString sprite_left) {
@@ -146,7 +145,7 @@ TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) 
     {
         int read_bytes = 0;
         unsigned start, end;
-        while (utf8proc_iterate_graphemes((unsigned char *)string, &read_bytes, len, &start, &end)) {
+        while (utf8proc_iterate_graphemes((unsigned char *) string, &read_bytes, len, &start, &end)) {
             flen++;
         }
     }
@@ -156,8 +155,8 @@ TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) 
         size_t i = 0;
         int read_bytes = 0;
         unsigned start, end;
-        while (utf8proc_iterate_graphemes((unsigned char *)string, &read_bytes, len, &start, &end)) {
-            strarr[i] = (TGString){&string[start], end - start};
+        while (utf8proc_iterate_graphemes((unsigned char *) string, &read_bytes, len, &start, &end)) {
+            strarr[i] = (TGString) {&string[start], end - start};
             i++;
         }
     }
@@ -183,9 +182,30 @@ void tguy_free(TrashGuyState *st) {
  *  1. element_index for \ref TrashGuyState::text we're currently working on
  *  2. total number of frames we spend working on this element
  *  3. first frame (boundary) involving the work on element with element_index
- *  4. offset from the boundary
+ *  4. sub frame (frame index)
+ *  5. direction
+ *  6. index within the field
  *
- *  All we know is desired frame, number of frames r
+ *  All we know is desired frame and number of frames per first element.
+ *  1. Because of the get_frame_lower_boundary() we know that our frame is roughly computed as: \n
+ *     frame = element_index * (initial_frames_count + element_index - 1),
+ *     which is equivalent to this quadratic equation: \n
+ *     (element_index)^2 + (initial_frames_count - 1)element_index - frame = 0 \n
+ *     We solve this equation for element_index, which is x_1. \n
+ *     (x_1 means right wing of the parabola,
+ *         x_2 (left side) is meaningless to us, valid indices/frames reside on the right side) \n
+ *     x_1 = (-b + sqrt(b^2 - 4ac)) / 2a, but because c is always negative and a is always 1, we can rewrite it as: \n
+ *     x_1 = (sqrt(b^2 + 4c) - b) / 2, which is the final formula
+ *
+ *  2. Simple arithmetic progression, with each next element number of frames increases by 2.
+ *
+ *  3. We now have all the values needed to call get_frame_lower_boundary().
+ *
+ *  4. boundary <= (boundary + sub_frame) < total number, thus sub_frame = boundary - frame
+ *
+ *  5. we spend the same number of frames moving left/right, if sub_frame < (total / 2) -> right, else -> left
+ *
+ *  6. index i within the field is computed as sub_frame % (total / 2)
  */
 void tguy_set_frame(TrashGuyState *st, unsigned frame) {
     /*         a                        b                              c       */
@@ -194,26 +214,27 @@ void tguy_set_frame(TrashGuyState *st, unsigned frame) {
     if (st->cur_frame == frame) return;
     {
         /* unsigned a = 1,*/
-        unsigned b = (st->initial_frames_count - 1),
-            c = frame;
-        /* school math */
+        unsigned b = (st->initial_frames_count - 1), c = frame;
+        /* school math, see 1 */
         unsigned element_index = ((unsigned) sqrt((b * b) + (c << 2)/* a */ ) - b) / 2 /* a */;
-        /* total number of frames drawn for moving the letter with index n (moving from the start to the end and backwards) */
+        /* number of frames needed to process element, see 2 */
         unsigned frames_per_element = st->initial_frames_count + (2 * element_index);
-        /* order of the frame in the frame series (up to frames_per_element) */
+        /* index of the frame in the frame series (up to frames_per_element) */
         unsigned sub_frame = (frame - get_frame_lower_boundary(st->initial_frames_count, element_index));
         /* if we're in the first half frames we're moving right, otherwise left */
-        unsigned right = (sub_frame < frames_per_element / 2);
-        /* index yields 0 twice, the difference is whether we're moving right */
+        unsigned right = (sub_frame < (frames_per_element / 2));
+        /* trashguy index yields 0 twice, the difference is whether we're moving right or left */
         unsigned i = right ? sub_frame : frames_per_element - sub_frame - 1;
 
-        st->cur_frame = frame; /* unused */
-        /* if we're not moving right, then we're not drawing the element n because trashguy holds it */
+        /* used to make set_frame faster by not setting same frame twice and to assert unset TrashGuyState */
+        st->cur_frame = frame;
+
+        /* if we're not moving right, then we're not drawing the n-th element because trashguy "carries" it */
         tguy_clear_field(st, element_index + !right);
 
-        /* don't overwrite the trash can */
+        /* don't overwrite the trash can when placing the trash-guy */
         st->field.data[i + 1] = right ? st->sprite_right : st->sprite_left;
-        /* Draw the element trashguy holds */
+        /* Draw the element trashguy carries if we're not near the can */
         if (!right && i != 0) {
             st->field.data[i] = st->text.data[element_index];
         }
