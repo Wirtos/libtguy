@@ -24,14 +24,10 @@
 
 /** @struct TGString
  *  String container
- * @var TGString::str
- *      Pointer to a non-nul-terminated string
- * @var TGString::len
- *      Number of bytes string has excluding nul terminator
  */
 typedef struct {
-    const char *str;
-    size_t len;
+    const char *str; /**< Pointer to a non-nul-terminated string              */
+    size_t len;      /**< Number of bytes string has excluding nul terminator */
 } TGString;
 
 /** @def TGStringConst(str)
@@ -105,20 +101,20 @@ LIBTGUY_EXPORT unsigned tguy_get_frames_count(const TrashGuyState *st);
 LIBTGUY_EXPORT size_t tguy_get_bsize(TrashGuyState *st);
 
 /**
- *  Writes currently set TrashGuy frame to fp
+ *  Writes currently set TrashGuy frame to fp without newline
  * @param st           Valid \ref TrashGuyState with frame set
  * @param fp           Valid FILE
  */
 LIBTGUY_EXPORT void tguy_fprint(const TrashGuyState *st, FILE *fp);
 
 /**
- *  Writes currently set TrashGuy frame to stdout
+ *  Writes currently set TrashGuy frame to stdout without newline
  * @param st           Valid \ref TrashGuyState with frame set
  */
 LIBTGUY_EXPORT void tguy_print(const TrashGuyState *st);
 
 /**
- *  Writes currently set TrashGuy frame to buffer
+ *  Writes currently set TrashGuy frame to buffer without newline
  * @param st           Valid \ref TrashGuyState with frame set
  * @param buf          Buffer at least tguy_get_bsize() bytes large
  */
