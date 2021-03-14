@@ -6,33 +6,55 @@
 #include <stdlib.h>
 #include <utf8proc.h>
 
+/**
+ * @file libtguy.c
+ */
+
+/** \mainpage
+ * For API documentation see \ref libtguy.h. \n
+ * For implementation details see \ref libtguy.c. \n
+ * For example python CFFI see
+ *  <a href='https://gist.github.com/Wirtos/b9e0554e807109e6be14b136a5e737f2'>libtguy_python</a>.
+ */
+
+/**
+ * Array of TGStrings
+ */
 typedef struct {
-    TGString *data;
-    size_t len;
+    TGString *data; /**< array of size len */
+    size_t len;     /**< length */
 } TrashField;
 
+/**
+ * Struct to keep relevant TrashGuy data
+ */
 struct TrashGuyState {
-    void *udata_;
-    unsigned initial_frames_count;
-    TGString sprite_right, sprite_left, sprite_can, sprite_space;
-    TrashField text;
-    TrashField field;
+    void *udata; /**< pointer to user-allocated memory */
+    unsigned initial_frames_count; /**< number of frames spent to process first element */
+    TGString sprite_right, /**< when facing right */
+             sprite_left,  /**< when facing left */
+             sprite_can,   /**< trash can sprite */
+             sprite_space; /**< empty space sprite */
+    TrashField text; /**< elements for TrashGuy to process, each one can contain one or more characters */
+    TrashField field; /**< array where we place current element */
     #ifdef TGUY_FASTCLEAR
-    TrashField empty_field_;
+    TrashField empty_field_;/**< field, but filled with only trash can and space sprites */
     #endif
-    unsigned cur_frame;
-    unsigned max_frames;
-    size_t bufsize;
+    unsigned cur_frame; /**< current frame set, initially UINT_MAX */
+    unsigned max_frames; /**< number of frames animation takes to complete -> 0 <= frame < max_frames */
+    size_t bufsize; /**< computed size of the buffer to store one frame as string representation, initially 0 */
 };
 
 /**
  *  Returns first frame of sequence of frames involving the work with element element_index of
  *  (\ref TrashGuyState::text). \n
- *  You can perceive this function as a parabola, where each x is element_index and y is returned frame,
- *  so (get_frame_lower_boundary(const, i + 1) - get_frame_lower_boundary(const, i)) will yield number
- *  of frames needed to process element with index i. \n
- *  Initial number of frames is computed as
- *      (spacing + 1 for frame we are standing still) * 2 because we're moving forward to the element, then backwards to the can
+ *  You can perceive this function as a parabola, where each x is element_index and y is returned frame: \n
+ *  <code> frame = element_index<sup>2</sup> + (initial_frames_count - 1)element_index </code> \n
+ *  For example: \n
+ *      <code> (get_frame_lower_boundary(const, i + 1) - get_frame_lower_boundary(const, i)) </code> \n
+ *  will yield number of frames needed to process element with index i. \n
+ *  Initial number of frames is computed as: \n
+ *      <code> (spacing + 1) * 2 </code>
  * @param initial_frames_count  \ref TrashGuyState::initial_frames_count
  * @param element_index         index of text element in \ref TrashGuyState::text[element_index]
  * @return                      first frame of processed element_index
@@ -43,7 +65,7 @@ static inline unsigned get_frame_lower_boundary(unsigned initial_frames_count, u
 
 /**
  *  Clears TrashGuyState::field excluding first element (\ref TrashGuyState::sprite_can)
- *  and including n \ref TrashGuyState::text elements and replaces them with \ref TrashGuyState::sprite_space
+ *  removes n \ref TrashGuyState::text elements and replaces them with \ref TrashGuyState::sprite_space
  * @param st                Valid \ref TrashGuyState
  * @param n_erase_elements  number of \ref TrashGuyState::text elements to clear with \ref TrashGuyState::sprite_space
  */
@@ -89,7 +111,7 @@ TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacin
         st->cur_frame = (unsigned) -1;
         /* number of frames up to the last + 1 */
         st->max_frames = get_frame_lower_boundary(st->initial_frames_count, (unsigned) st->text.len) + 1;
-        st->udata_ = NULL;
+        st->udata = NULL;
     }
     {
         size_t fields_data_sz = (st->text.len + st->field.len
@@ -164,48 +186,51 @@ TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) 
     if (st == NULL) {
         free(strarr);
     } else {
-        st->udata_ = strarr;
+        st->udata = strarr;
     }
     return st;
 }
 
-/* we only free text memory block because fields are a part of it */
+/**
+ * Also deallocates udata
+ */
 void tguy_free(TrashGuyState *st) {
     if (st == NULL) return;
-    free(st->udata_);
+    free(st->udata);
     free(st->text.data);
     free(st);
 }
 
-/*
+/**
  * In order to properly set frame we need to know few things beforehand:
- *  1. element_index for \ref TrashGuyState::text we're currently working on
- *  2. total number of frames we spend working on this element
- *  3. first frame (boundary) involving the work on element with element_index
- *  4. sub frame (frame index)
- *  5. direction
- *  6. index within the field
+ *  -# element_index for \ref TrashGuyState::text[element_index] we're currently working on
+ *  -# total number of frames we spend working on this element
+ *  -# first frame (boundary) involving the work on element with element_index
+ *  -# sub frame (frame index)
+ *  -# direction
+ *  -# index within the field
  *
  *  All we know is desired frame and number of frames per first element.
- *  1. Because of the get_frame_lower_boundary() we know that our frame is roughly computed as: \n
- *     frame = element_index * (initial_frames_count + element_index - 1),
+ *  -# Because of the get_frame_lower_boundary() we know that initial frame of each element is computed as: \n
+ *     <code> frame = element_index * (initial_frames_count + element_index - 1) </code> \n
  *     which is equivalent to this quadratic equation: \n
- *     (element_index)^2 + (initial_frames_count - 1)element_index - frame = 0 \n
- *     We solve this equation for element_index, which is x_1. \n
- *     (x_1 means right wing of the parabola,
- *         x_2 (left side) is meaningless to us, valid indices/frames reside on the right side) \n
- *     x_1 = (-b + sqrt(b^2 - 4ac)) / 2a, but because c is always negative and a is always 1, we can rewrite it as: \n
- *     x_1 = (sqrt(b^2 + 4c) - b) / 2, which is the final formula
+ *     <code> (element_index)<sup>2</sup> + (initial_frames_count - 1)element_index - frame = 0 </code> \n
+ *     We solve this equation for element_index, which is x<sub>1</sub>. \n
+ *     (x<sub>1</sub> means right wing of the parabola,
+ *         x<sub>2</sub> (left side) is meaningless to us, valid indices/frames only reside on the right side) \n
+ *     <code> x<sub>1</sub> = (-b + sqrt(b<sup>2</sup> - 4ac)) / 2a </code> \n
+ *     but because c is always negative and a is always 1, we can rewrite it as: \n
+ *     <code> x<sub>1</sub> = (sqrt(b<sup>2</sup> + 4c) - b) / 2 </code>, which is the final formula
  *
- *  2. Simple arithmetic progression, with each next element number of frames increases by 2.
+ *  -# Simple arithmetic progression, with each next element number of frames increases by 2.
  *
- *  3. We now have all the values needed to call get_frame_lower_boundary().
+ *  -# We now have all the values needed to call get_frame_lower_boundary().
  *
- *  4. boundary <= (boundary + sub_frame) < total number, thus sub_frame = boundary - frame
+ *  -# <code> boundary <= (boundary + sub_frame) < total number </code>, thus <code> sub_frame = boundary - frame </code>
  *
- *  5. we spend the same number of frames moving left/right, if sub_frame < (total / 2) -> right, else -> left
+ *  -# we spend the same number of frames moving left/right, if <code> sub_frame < (total / 2) </code> -> right, else -> left
  *
- *  6. index i within the field is computed as sub_frame % (total / 2)
+ *  -# index i within the field is computed as <code> sub_frame % (total / 2) </code>
  */
 void tguy_set_frame(TrashGuyState *st, unsigned frame) {
     /*         a                        b                              c       */
@@ -223,18 +248,18 @@ void tguy_set_frame(TrashGuyState *st, unsigned frame) {
         unsigned sub_frame = (frame - get_frame_lower_boundary(st->initial_frames_count, element_index));
         /* if we're in the first half frames we're moving right, otherwise left */
         unsigned right = (sub_frame < (frames_per_element / 2));
-        /* trashguy index yields 0 twice, the difference is whether we're moving right or left */
+        /* TrashGuy index yields 0 twice, the difference is whether we're moving right or left */
         unsigned i = right ? sub_frame : frames_per_element - sub_frame - 1;
 
         /* used to make set_frame faster by not setting same frame twice and to assert unset TrashGuyState */
         st->cur_frame = frame;
 
-        /* if we're not moving right, then we're not drawing the n-th element because trashguy "carries" it */
+        /* if we're not moving right, then we're not drawing the n-th element because TrashGuy "carries" it */
         tguy_clear_field(st, element_index + !right);
 
         /* don't overwrite the trash can when placing the trash-guy */
         st->field.data[i + 1] = right ? st->sprite_right : st->sprite_left;
-        /* Draw the element trashguy carries if we're not near the can */
+        /* Draw the element TrashGuy carries if we're not right near the trash can */
         if (!right && i != 0) {
             st->field.data[i] = st->text.data[element_index];
         }
@@ -271,8 +296,13 @@ unsigned tguy_get_frames_count(const TrashGuyState *st) {
     return st->max_frames;
 }
 
+/** returns a or b */
 #define tg_max(a, b) ((a) > (b) ? (a) : (b))
 
+/**
+ * If bsize is not set, then iterate over possible field layout and
+ * compute bufsize enough to keep any frame plus nul terminator
+ */
 size_t tguy_get_bsize(TrashGuyState *st) {
     /* for nul terminator */
     size_t sz = 1;
