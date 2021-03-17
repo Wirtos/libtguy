@@ -49,12 +49,13 @@ struct TrashGuyState {
  *  Returns first frame of sequence of frames involving the work with element element_index of
  *  (\ref TrashGuyState::text). \n
  *  You can perceive this function as a parabola, where each x is element_index and y is returned frame: \n
- *  <code> frame = element_index<sup>2</sup> + (initial_frames_count - 1)element_index </code> \n
+ *  <code> frame = element_index<sup>2</sup> + (\ref TrashGuyState::initial_frames_count "initial_frames_count" - 1)element_index </code> \n
+ *  See <a href='https://www.desmos.com/calculator/6z0ewdyxpq'>this visualization</a>. \n
  *  For example: \n
  *      <code> (get_frame_lower_boundary(const, i + 1) - get_frame_lower_boundary(const, i)) </code> \n
  *  will yield number of frames needed to process element with index i. \n
  *  Initial number of frames is computed as: \n
- *      <code> (spacing + 1) * 2 </code>
+ *      <code> (\ref tguy_from_arr_ex() "spacing" + 1) * 2 </code>
  * @param initial_frames_count  \ref TrashGuyState::initial_frames_count
  * @param element_index         index of text element in \ref TrashGuyState::text[element_index]
  * @return                      first frame of processed element_index
@@ -204,7 +205,7 @@ void tguy_free(TrashGuyState *st) {
 /**
  * In order to properly set frame we need to know few things beforehand:
  *  -# element_index for \ref TrashGuyState::text[element_index] we're currently working on
- *  -# total number of frames we spend working on this element
+ *  -# number of frames per element
  *  -# first frame (boundary) involving the work on element with element_index
  *  -# sub frame (frame index)
  *  -# direction
@@ -213,7 +214,7 @@ void tguy_free(TrashGuyState *st) {
  *  All we know is desired frame and number of frames per first element.
  *  -# Because of the get_frame_lower_boundary() we know that initial frame of each element is computed as: \n
  *     <code> frame = element_index * (initial_frames_count + element_index - 1) </code> \n
- *     which is equivalent to this quadratic equation: \n
+ *     which is equivalent to this <a href='https://en.wikipedia.org/wiki/Quadratic_formula'>quadratic equation</a>: \n
  *     <code> (element_index)<sup>2</sup> + (initial_frames_count - 1)element_index - frame = 0 </code> \n
  *     We solve this equation for element_index, which is x<sub>1</sub>. \n
  *     (x<sub>1</sub> means right wing of the parabola,
@@ -226,7 +227,8 @@ void tguy_free(TrashGuyState *st) {
  *
  *  -# We now have all the values needed to call get_frame_lower_boundary().
  *
- *  -# <code> boundary <= (boundary + sub_frame) < total number </code>, thus <code> sub_frame = boundary - frame </code>
+ *  -# <code> boundary <= (boundary + sub_frame) < boundary + frames_per_element </code>, \n
+ *     thus <code> sub_frame = frame - boundary </code>
  *
  *  -# we spend the same number of frames moving left/right, if <code> sub_frame < (total / 2) </code> -> right, else -> left
  *
