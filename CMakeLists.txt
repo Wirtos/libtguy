@@ -90,14 +90,16 @@ install(EXPORT
 
 if (${TGUY_BUILD_DOCS})
     find_package(Doxygen REQUIRED)
-    if (${DOXYGEN_FOUND})
-        set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
-        doxygen_add_docs(
-                _libtguy_docs
-                include
-                COMMENT "Generate docs"
-        )
-        add_custom_target(libtguy_docs ALL DEPENDS _libtguy_docs COMMAND "" BYPRODUCTS "${DOXYGEN_OUTPUT_DIRECTORY}")
-        install(DIRECTORY "${DOXYGEN_OUTPUT_DIRECTORY}" TYPE DOC)
-    endif ()
+
+    set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
+    set(DOXYGEN_EXTRACT_STATIC YES)
+    doxygen_add_docs(
+            _libtguy_docs
+            include
+            src
+            COMMENT "Generate docs"
+    )
+    add_custom_target(libtguy_docs ALL DEPENDS _libtguy_docs COMMAND "" BYPRODUCTS "${DOXYGEN_OUTPUT_DIRECTORY}")
+    install(DIRECTORY "${DOXYGEN_OUTPUT_DIRECTORY}" TYPE DOC)
+
 endif ()
