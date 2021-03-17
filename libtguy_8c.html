@@ -189,12 +189,13 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>Returns first frame of sequence of frames involving the work with element element_index of (<a class="el" href="struct_trash_guy_state.html#ab6cc2f0038f8ba50f0abae481c748b6b">TrashGuyState::text</a>). <br  />
  You can perceive this function as a parabola, where each x is element_index and y is returned frame: <br  />
- <code> frame = element_index<sup>2</sup> + (initial_frames_count - 1)element_index </code> <br  />
+ <code> frame = element_index<sup>2</sup> + (<a class="el" href="struct_trash_guy_state.html#a113470ade7a9dea39aa915fde2c97e99">initial_frames_count</a> - 1)element_index </code> <br  />
+ See <a href="https://www.desmos.com/calculator/6z0ewdyxpq">this visualization</a>. <br  />
  For example: <br  />
  <code> (get_frame_lower_boundary(const, i + 1) - get_frame_lower_boundary(const, i)) </code> <br  />
  will yield number of frames needed to process element with index i. <br  />
  Initial number of frames is computed as: <br  />
- <code> (spacing + 1) * 2 </code> </p><dl class="params"><dt>Parameters</dt><dd>
+ <code> (<a class="el" href="libtguy_8h.html#a61f8a513218d1d79dbeac9bd439d2782">spacing</a> + 1) * 2 </code> </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
     <tr><td class="paramname">initial_frames_count</td><td><a class="el" href="struct_trash_guy_state.html#a113470ade7a9dea39aa915fde2c97e99">TrashGuyState::initial_frames_count</a> </td></tr>
     <tr><td class="paramname">element_index</td><td>index of text element in <a class="el" href="struct_trash_guy_state.html#ab6cc2f0038f8ba50f0abae481c748b6b">TrashGuyState::text</a>[element_index] </td></tr>
@@ -625,7 +626,7 @@ Functions</h2></td></tr>
 </div><div class="memdoc">
 <p>In order to properly set frame we need to know few things beforehand:</p><ol type="1">
 <li>element_index for <a class="el" href="struct_trash_guy_state.html#ab6cc2f0038f8ba50f0abae481c748b6b">TrashGuyState::text</a>[element_index] we're currently working on</li>
-<li>total number of frames we spend working on this element</li>
+<li>number of frames per element</li>
 <li>first frame (boundary) involving the work on element with element_index</li>
 <li>sub frame (frame index)</li>
 <li>direction</li>
@@ -634,7 +635,7 @@ Functions</h2></td></tr>
 <p>All we know is desired frame and number of frames per first element.</p><ol type="1">
 <li>Because of the <a class="el" href="libtguy_8c.html#a5863f7484a39e10ed72595bbf434cf7b">get_frame_lower_boundary()</a> we know that initial frame of each element is computed as: <br  />
  <code> frame = element_index * (initial_frames_count + element_index - 1) </code> <br  />
- which is equivalent to this quadratic equation: <br  />
+ which is equivalent to this <a href="https://en.wikipedia.org/wiki/Quadratic_formula">quadratic equation</a>: <br  />
  <code> (element_index)<sup>2</sup> + (initial_frames_count - 1)element_index - frame = 0 </code> <br  />
  We solve this equation for element_index, which is x<sub>1</sub>. <br  />
  (x<sub>1</sub> means right wing of the parabola, x<sub>2</sub> (left side) is meaningless to us, valid indices/frames only reside on the right side) <br  />
@@ -643,7 +644,8 @@ Functions</h2></td></tr>
  <code> x<sub>1</sub> = (sqrt(b<sup>2</sup> + 4c) - b) / 2 </code>, which is the final formula</li>
 <li>Simple arithmetic progression, with each next element number of frames increases by 2.</li>
 <li>We now have all the values needed to call <a class="el" href="libtguy_8c.html#a5863f7484a39e10ed72595bbf434cf7b">get_frame_lower_boundary()</a>.</li>
-<li><code> boundary &lt;= (boundary + sub_frame) &lt; total number </code>, thus <code> sub_frame = boundary - frame </code></li>
+<li><code> boundary &lt;= (boundary + sub_frame) &lt; boundary + frames_per_element </code>, <br  />
+ thus <code> sub_frame = frame - boundary </code></li>
 <li>we spend the same number of frames moving left/right, if <code> sub_frame &lt; (total / 2) </code> -&gt; right, else -&gt; left</li>
 <li>index i within the field is computed as <code> sub_frame % (total / 2) </code> </li>
 </ol>
