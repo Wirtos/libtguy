@@ -61,7 +61,7 @@ struct TrashGuyState {
  * @return                      first frame of processed element_index
  */
 static inline unsigned get_frame_lower_boundary(unsigned initial_frames_count, unsigned element_index) {
-    return element_index * (initial_frames_count + element_index - 1);
+    return element_index * (element_index + initial_frames_count - 1);
 }
 
 /**
@@ -71,13 +71,12 @@ static inline unsigned get_frame_lower_boundary(unsigned initial_frames_count, u
  * @param n_erase_elements  number of \ref TrashGuyState::text elements to clear with \ref TrashGuyState::sprite_space
  */
 static inline void tguy_clear_field(TrashGuyState *st, unsigned n_erase_elements) {
-    unsigned items_offset = st->initial_frames_count / 2 + n_erase_elements + 1;
-    size_t flen = st->field.len - st->text.len + n_erase_elements;
+    unsigned items_offset = st->field.len - st->text.len + n_erase_elements;
     #ifdef TGUY_FASTCLEAR
     memcpy(&st->field.data[0], &st->empty_field_.data[0],
-        flen * sizeof(*st->field.data));
+        items_offset * sizeof(*st->field.data));
     #else
-    for (size_t i = 1; i < flen; i++) {
+    for (size_t i = 1; i < items_offset; i++) {
         st->field.data[i] = st->sprite_space;
     }
     #endif
@@ -101,7 +100,7 @@ TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacin
         /* len here is the actual number of elements to process, not restricted to letters/glyphs */
         st->text.len = len;
         /* additional 2 elements to hold the guy and can sprites */
-        st->field.len = spacing + st->text.len + 2;
+        st->field.len = 2 + spacing + st->text.len;
         #ifdef TGUY_FASTCLEAR
         /* fastclear option exploits the fact that linear memory copy is way faster to fill the field with spaces */
         st->empty_field_.len = st->field.len;
@@ -237,7 +236,7 @@ void tguy_free(TrashGuyState *st) {
 void tguy_set_frame(TrashGuyState *st, unsigned frame) {
     /*         a                        b                              c       */
     /* (element_index)^2 + (initial_frames_count - 1)element_index - frame = 0 */
-    assert(frame < st->max_frames);
+    assert(((void)"Frame is bigger than get_frames_count()", frame < st->max_frames));
     if (st->cur_frame == frame) return;
     {
         /* unsigned a = 1,*/
@@ -260,7 +259,7 @@ void tguy_set_frame(TrashGuyState *st, unsigned frame) {
         tguy_clear_field(st, element_index + !right);
 
         /* don't overwrite the trash can when placing the trash-guy */
-        st->field.data[i + 1] = right ? st->sprite_right : st->sprite_left;
+        st->field.data[i + 1] = (right) ? st->sprite_right : st->sprite_left;
         /* Draw the element TrashGuy carries if we're not right near the trash can */
         if (!right && i != 0) {
             st->field.data[i] = st->text.data[element_index];
