@@ -35,14 +35,14 @@ struct TrashGuyState {
              sprite_left,  /**< when facing left */
              sprite_can,   /**< trash can sprite */
              sprite_space; /**< empty space sprite */
-    TrashField text; /**< elements for TrashGuy to process, each one can contain one or more characters */
-    TrashField field; /**< array where we place current element */
+    TrashField text;       /**< elements for TrashGuy to process, each one can contain one or more characters */
+    TrashField field;      /**< array where we place current element */
     #ifdef TGUY_FASTCLEAR
     TrashField empty_field_;/**< field, but filled with only trash can and space sprites */
     #endif
-    unsigned cur_frame; /**< current frame set, initially UINT_MAX */
-    unsigned max_frames; /**< number of frames animation takes to complete -> 0 <= frame < max_frames */
-    size_t bufsize; /**< computed size of the buffer to store one frame as string representation, initially 0 */
+    unsigned cur_frame;     /**< current frame set, initially UINT_MAX */
+    unsigned max_frames;    /**< number of frames animation takes to complete -> 0 <= frame < max_frames */
+    size_t bufsize;         /**< computed size of the buffer to store one frame as string representation, initially 0 */
 };
 
 /**
@@ -121,7 +121,7 @@ TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacin
         );
 
         /* allocates memory for text, field and optionally empty_field in one malloc call,
-         * memory layout: | [text[text.len] |> field[field.len] |> empty_field[empty_field.len] |
+         * memory layout: TTTTTffffffffffffEEEEEEEEEEEE, where T - text, f - field, E - empty field
          * therefore address of field is address of text + text.len and so on. */
         st->text.data = malloc(sizeof(*st->field.data) * fields_data_sz);
         if (st->text.data == NULL) goto fail;
@@ -130,7 +130,6 @@ TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacin
 
         #ifdef TGUY_FASTCLEAR
         /* empty field has the same size as field, it's only filled with spaces and trash can sprite as first element */
-        st->empty_field_.len = st->field.len;
         st->empty_field_.data = st->field.data + st->field.len;
         st->empty_field_.data[0] = st->sprite_can;
         for (size_t i = 1, flen = st->empty_field_.len; i < flen; i++) {
