@@ -5,8 +5,12 @@ include(cmake/PreventInSourceBuild.cmake)
 prevent_in_source_build()
 
 
-include(cmake/GetVersionString.cmake)
-get_version_string(include/libtguy.h "TGUY" TGUY_VER)
+include(cmake/GetVersionFromMacro.cmake)
+get_version_from_macro(
+        HEADER include/libtguy.h
+        PREFIX TGUY_VER_
+        VERSIONS MAJOR MINOR PATCH
+        OUTPUT TGUY_VER)
 
 
 project(libtguy
