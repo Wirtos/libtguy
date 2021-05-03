@@ -16,7 +16,7 @@
 /**MAJOR*/
 #define TGUY_VER_MAJOR 0
 /**MINOR*/
-#define TGUY_VER_MINOR 4
+#define TGUY_VER_MINOR 5
 /**PATCH*/
 #define TGUY_VER_PATCH 0
 
@@ -34,7 +34,7 @@ typedef struct {
  *  Creates TGString from string
  * @param  str constant string array or literal
  */
-#define TGStringConst(str) ((TGString){str, sizeof(str) - 1})
+#define TGSTR(str) ((TGString){str, sizeof(str) - 1})
 
 /** @typedef TrashGuyState
  *  Anonymous struct typedef containing TrashGuy information
@@ -42,7 +42,7 @@ typedef struct {
 typedef struct TrashGuyState TrashGuyState;
 
 /**
- *  Creates new TrashGuysState from array of TGString
+ *  Creates new TrashGuysState from array of TGString. If pointer to sprite is NULL then function will use default one
  * @param arr          Array of string containers, each one is a separate element for TrashGuy to dump to the bin
  * @param len          Number of string containers
  * @param spacing      Number of space sprites to be placed between the TrashGuy sprite and fist element initially
@@ -53,7 +53,7 @@ typedef struct TrashGuyState TrashGuyState;
  * @return             \ref TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
  */
 LIBTGUY_EXPORT TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacing,
-    TGString sprite_space, TGString sprite_can, TGString sprite_right, TGString sprite_left);
+    TGString *sprite_space, TGString *sprite_can, TGString *sprite_right, TGString *sprite_left);
 
 /**
  *  Creates new TrashGuysState from array of TGString using default sprites

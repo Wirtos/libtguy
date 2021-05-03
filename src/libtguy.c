@@ -85,7 +85,7 @@ static inline void tguy_clear_field(TrashGuyState *st, unsigned n_erase_elements
 }
 
 TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacing,
-    TGString sprite_space, TGString sprite_can, TGString sprite_right, TGString sprite_left) {
+    TGString *sprite_space, TGString *sprite_can, TGString *sprite_right, TGString *sprite_left) {
     struct TrashGuyState *st;
     assert(((void) "len is too big", len < (unsigned) -1));
     st = malloc(sizeof(*st));
@@ -93,10 +93,10 @@ TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacin
     {
         /* one frame for initial pos, spacing frames to walk over empty space to the first element, x2 to return back */
         st->initial_frames_count = (spacing + 1) * 2;
-        st->sprite_right = sprite_right;
-        st->sprite_left = sprite_left;
-        st->sprite_can = sprite_can;
-        st->sprite_space = sprite_space;
+        st->sprite_right  = (sprite_right) ? *sprite_right : TGSTR("(> ^_^)>");
+        st->sprite_left   = (sprite_left ) ? *sprite_left  : TGSTR("<(^_^ <)");
+        st->sprite_can    = (sprite_can  ) ? *sprite_can   : TGSTR("\xf0\x9f\x97\x91");
+        st->sprite_space  = (sprite_space) ? *sprite_space : TGSTR(" ");
         /* len here is the actual number of elements to process, not restricted to letters/glyphs */
         st->text.len = len;
         /* additional 2 elements to hold the guy and can sprites */
@@ -144,18 +144,14 @@ TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacin
         /* tguy_clear_field(st, 0); */
     }
     return st;
-    fail:
+
+fail:
     free(st);
     return NULL;
 }
 
 TrashGuyState *tguy_from_arr(const TGString *arr, size_t len, unsigned spacing) {
-    return tguy_from_arr_ex(arr, len, spacing,
-        TGStringConst(" "),
-        TGStringConst("\xf0\x9f\x97\x91"),
-        TGStringConst("(> ^_^)>"),
-        TGStringConst("<(^_^ <)")
-    );
+    return tguy_from_arr_ex(arr, len, spacing, NULL, NULL, NULL, NULL);
 }
 
 TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) {
