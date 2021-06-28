@@ -30,7 +30,9 @@ typedef struct {
  */
 struct TrashGuyState {
     void *udata; /**< pointer to user-allocated memory */
-    unsigned initial_frames_count; /**< number of frames spent to process first element */
+    unsigned initial_frames_count; /**< number of frames spent to process first element,
+                                    * computed from spacing provided by the user: \n
+                                    *   <code> (\ref tguy_from_arr_ex() "spacing" + 1) * 2 </code> */
     TGString sprite_right, /**< when facing right */
              sprite_left,  /**< when facing left */
              sprite_can,   /**< trash can sprite */
@@ -46,32 +48,29 @@ struct TrashGuyState {
 };
 
 /**
- *  Returns first frame of sequence of frames involving the work with element element_index of
- *  (\ref TrashGuyState::text). \n
- *  You can perceive this function as a parabola, where each x is element_index and y is returned frame: \n
+ *  Returns first frame of sequence of frames involving the work with element_index of \ref TrashGuyState::text. \n
+ *  You can perceive this function as a parabola, where each x is element_index and y is returned frame (starts from 0): \n
  *  <code> frame = element_index<sup>2</sup> + (\ref TrashGuyState::initial_frames_count "initial_frames_count" - 1)element_index </code> \n
  *  See <a href='https://www.desmos.com/calculator/6z0ewdyxpq'>this visualization</a>. \n
  *  For example: \n
- *      <code> (get_frame_lower_boundary(const, i + 1) - get_frame_lower_boundary(const, i)) </code> \n
- *  will yield number of frames needed to process element with index i. \n
- *  Initial number of frames is computed as: \n
- *      <code> (\ref tguy_from_arr_ex() "spacing" + 1) * 2 </code>
+ *      <code> (get_frame_lower_boundary(4, i + 1) - get_frame_lower_boundary(4, i)) </code> \n
+ *  will yield number of frames needed to process i-th element if
+ *   \ref TrashGuyState::initial_frames_count "initial_frames_count" was 4. \n
  * @param initial_frames_count  \ref TrashGuyState::initial_frames_count
  * @param element_index         index of text element in \ref TrashGuyState::text[element_index]
- * @return                      first frame of processed element_index
+ * @return                      first frame of for element_index
  */
 static inline unsigned get_frame_lower_boundary(unsigned initial_frames_count, unsigned element_index) {
     return element_index * (element_index + initial_frames_count - 1);
 }
 
 /**
- *  Clears TrashGuyState::field excluding first element (\ref TrashGuyState::sprite_can)
- *  removes n \ref TrashGuyState::text elements and replaces them with \ref TrashGuyState::sprite_space
+ *  Replaces \ref TrashGuyState::field[1:n+1] with with \ref TrashGuyState::sprite_space
  * @param st                Valid \ref TrashGuyState
- * @param n_erase_elements  number of \ref TrashGuyState::text elements to clear with \ref TrashGuyState::sprite_space
+ * @param n_clear_elements  number of \ref TrashGuyState::text elements to clear with \ref TrashGuyState::sprite_space
  */
-static inline void tguy_clear_field(TrashGuyState *st, unsigned n_erase_elements) {
-    unsigned items_offset = st->field.len - st->text.len + n_erase_elements;
+static inline void tguy_clear_field(TrashGuyState *st, unsigned n_clear_elements) {
+    unsigned items_offset = st->field.len - st->text.len + n_clear_elements;
     #ifdef TGUY_FASTCLEAR
     memcpy(&st->field.data[0], &st->empty_field_.data[0],
         items_offset * sizeof(*st->field.data));
@@ -80,8 +79,8 @@ static inline void tguy_clear_field(TrashGuyState *st, unsigned n_erase_elements
         st->field.data[i] = st->sprite_space;
     }
     #endif
-    memcpy(&st->field.data[items_offset], &st->text.data[n_erase_elements],
-        sizeof(*st->field.data) * (st->text.len - n_erase_elements));
+    memcpy(&st->field.data[items_offset], &st->text.data[n_clear_elements],
+        sizeof(*st->field.data) * (st->text.len - n_clear_elements));
 }
 
 TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacing,
@@ -141,7 +140,7 @@ TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacin
             st->text.data[i] = arr[i];
         }
         /* no need to clear the field because set_frame will do it anyway */
-        /* tguy_clear_field(st, 0); */
+        /* calling print functions or get_arr at this point is undefined behavior */
     }
     return st;
 

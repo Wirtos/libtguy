@@ -30,8 +30,8 @@ typedef struct {
     size_t len;      /**< Number of bytes string has excluding nul terminator */
 } TGString;
 
-/** @def TGStringConst(str)
- *  Creates TGString from string
+/** @def TGSTR(str)
+ *  Creates TGString from compile-time string
  * @param  str constant string array or literal
  */
 #define TGSTR(str) ((TGString){str, sizeof(str) - 1})
