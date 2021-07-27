@@ -28,12 +28,10 @@ option(TGUY_BUILD_DOCS "Whether to build doxygen docs" OFF)
 
 message(STATUS "libtguy ${TGUY_VER}")
 
-set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
-
 find_package(UTF8Proc QUIET)
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install" CACHE PATH "" FORCE)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install")
 endif ()
 
 add_library(${PROJECT_NAME} src/libtguy.c)
@@ -54,9 +52,11 @@ if (TGUY_USE_FASTCLEAR)
     target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_FASTCLEAR)
 endif ()
 
-if (NOT UTF8PROC_FOUND)
+if (UTF8Proc_FOUND)
+    target_link_libraries(${PROJECT_NAME} PRIVATE utf8proc)
+else ()
     include(FetchContent)
-    message(WARNING "UTF8PROC not found, using git version...")
+    message(WARNING "UTF8Proc not found, using git version...")
 
     FetchContent_Declare(
             utf8proc
@@ -66,16 +66,14 @@ if (NOT UTF8PROC_FOUND)
     FetchContent_GetProperties(utf8proc)
     if (NOT utf8proc_POPULATED)
         FetchContent_Populate(utf8proc)
+        add_subdirectory(${utf8proc_SOURCE_DIR})
     endif ()
 
-    add_subdirectory(${utf8proc_SOURCE_DIR})
 
     get_target_property(UTF8PROC_INCLUDES utf8proc INTERFACE_INCLUDE_DIRECTORIES)
     # link utf8proc object directly
     target_sources(${PROJECT_NAME} PRIVATE $<TARGET_OBJECTS:utf8proc>)
     target_include_directories(${PROJECT_NAME} PRIVATE ${UTF8PROC_INCLUDES})
-else ()
-    target_link_libraries(${PROJECT_NAME} PRIVATE utf8proc)
 endif ()
 
 include(CheckLibraryExists)

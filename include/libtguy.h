@@ -7,7 +7,7 @@
 
 #include <stddef.h>
 #include <stdio.h>
-#include <libtguy_export.h>
+#include "libtguy_export.h"
 
 /** @defgroup VERSION Version macros
  * Printable format: "%d.%d.%d", MAJOR, MINOR, PATCH
