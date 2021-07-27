@@ -1,9 +1,7 @@
 cmake_minimum_required(VERSION 3.12)
 
-
 include(cmake/PreventInSourceBuild.cmake)
 prevent_in_source_build()
-
 
 include(cmake/GetVersionFromMacro.cmake)
 get_version_from_macro(
@@ -11,7 +9,6 @@ get_version_from_macro(
         PREFIX TGUY_VER_
         VERSIONS MAJOR MINOR PATCH
         OUTPUT TGUY_VER)
-
 
 project(libtguy
         LANGUAGES C
@@ -66,9 +63,8 @@ else ()
     FetchContent_GetProperties(utf8proc)
     if (NOT utf8proc_POPULATED)
         FetchContent_Populate(utf8proc)
-        add_subdirectory(${utf8proc_SOURCE_DIR})
     endif ()
-
+    add_subdirectory(${utf8proc_SOURCE_DIR} ${utf8proc_BINARY_DIR})
 
     get_target_property(UTF8PROC_INCLUDES utf8proc INTERFACE_INCLUDE_DIRECTORIES)
     # link utf8proc object directly
