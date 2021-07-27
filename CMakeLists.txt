@@ -1,10 +1,21 @@
 cmake_minimum_required(VERSION 3.12)
 
-include(cmake/GetVersionString.cmake)
-get_version_string(include/libtguy.h "TGUY" TGUY_VER)
 
-project(libtguy LANGUAGES C VERSION ${TGUY_VER}
-        HOMEPAGE_URL "https://github.com/Wirtos/libtguy"
+include(cmake/PreventInSourceBuild.cmake)
+prevent_in_source_build()
+
+
+include(cmake/GetVersionFromMacro.cmake)
+get_version_from_macro(
+        HEADER include/libtguy.h
+        PREFIX TGUY_VER_
+        VERSIONS MAJOR MINOR PATCH
+        OUTPUT TGUY_VER)
+
+
+project(libtguy
+        LANGUAGES C
+        VERSION "${TGUY_VER}"
         DESCRIPTION "TrashGuy C library created to be easily usable from other languages with CFFI support.")
 
 set(CMAKE_C_STANDARD 99)
@@ -15,12 +26,8 @@ option(BUILD_SHARED_LIBS "Whether to build a dynamic library" OFF)
 option(TGUY_USE_FASTCLEAR "Whether to double space usage to increase speed" ON)
 option(TGUY_BUILD_DOCS "Whether to build doxygen docs" OFF)
 
-message(DEBUG "libtguy ${TGUY_VER}")
+message(STATUS "libtguy ${TGUY_VER}")
 
-include(cmake/PreventInSourceBuild.cmake)
-prevent_in_source_build()
-
-set(TGUY_BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS})
 set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
 
 find_package(UTF8Proc QUIET)
@@ -34,7 +41,7 @@ add_library(TGuy::TGuy ALIAS ${PROJECT_NAME})
 if ("${CMAKE_C_COMPILER_ID}" MATCHES "MSVC" OR "${CMAKE_C_SIMULATE_ID}" MATCHES "MSVC")
     target_compile_options(${PROJECT_NAME}
             PRIVATE
-            $<$<CONFIG:Release>:-fp:fast> -W4 -WX
+            $<$<CONFIG:Release>:-fp:fast> -W4
             )
 elseif ("${CMAKE_C_COMPILER_ID}" MATCHES "GNU|Intel|Clang" OR "${CMAKE_C_SIMULATE_ID}" MATCHES "GNU")
     target_compile_options(${PROJECT_NAME}
@@ -132,6 +139,5 @@ if (${TGUY_BUILD_DOCS})
             COMMENT "Generate docs"
     )
     add_custom_target(libtguy_docs ALL DEPENDS _libtguy_docs COMMAND "" BYPRODUCTS "${DOXYGEN_OUTPUT_DIRECTORY}")
-    install(DIRECTORY "${DOXYGEN_OUTPUT_DIRECTORY}" TYPE DOC)
-
+    install(DIRECTORY "${DOXYGEN_OUTPUT_DIRECTORY}" DESTINATION ${CMAKE_INSTALL_DOCDIR}/${PROJECT_NAME})
 endif ()
