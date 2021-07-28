@@ -10,6 +10,7 @@ get_version_from_macro(
         VERSIONS MAJOR MINOR PATCH
         OUTPUT TGUY_VER)
 
+set(PACKAGE_NAME TGuy)
 project(libtguy
         LANGUAGES C
         VERSION "${TGUY_VER}"
@@ -25,14 +26,16 @@ option(TGUY_BUILD_DOCS "Whether to build doxygen docs" OFF)
 
 message(STATUS "libtguy ${TGUY_VER}")
 
-find_package(UTF8Proc QUIET)
-
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install")
 endif ()
 
+
+find_package(UTF8Proc QUIET)
+
 add_library(${PROJECT_NAME} src/libtguy.c)
-add_library(TGuy::TGuy ALIAS ${PROJECT_NAME})
+add_library(${PACKAGE_NAME}::TGuy ALIAS ${PROJECT_NAME})
+
 if ("${CMAKE_C_COMPILER_ID}" MATCHES "MSVC" OR "${CMAKE_C_SIMULATE_ID}" MATCHES "MSVC")
     target_compile_options(${PROJECT_NAME}
             PRIVATE
@@ -84,9 +87,10 @@ generate_export_header(${PROJECT_NAME})
 include(GNUInstallDirs)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
-        $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
-        $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>
+        "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>"
+        
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
         )
 
 # export tguy target as TGuy
@@ -94,7 +98,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 set_property(TARGET ${PROJECT_NAME}
         PROPERTY PUBLIC_HEADER
         include/libtguy.h
-        "${CMAKE_CURRENT_BINARY_DIR}/libtguy_export.h"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_export.h"
         )
 set_target_properties(${PROJECT_NAME} PROPERTIES
         EXPORT_NAME TGuy
@@ -102,18 +106,18 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         )
 
 install(TARGETS ${PROJECT_NAME}
-        EXPORT TGuyConfig
+        EXPORT ${PACKAGE_NAME}Config
         COMPONENT TGuy
-        RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}/${PROJECT_NAME}
-        LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
-        ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}
-        PUBLIC_HEADER DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}/${PROJECT_NAME}"
+        LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}"
+        ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}"
+        PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}"
         )
 
 export(TARGETS
         ${PROJECT_NAME}
-        NAMESPACE TGuy::
-        FILE "${CMAKE_CURRENT_BINARY_DIR}/TGuyConfig.cmake"
+        NAMESPACE ${PACKAGE_NAME}::
+        FILE "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
         )
 
 install(EXPORT TGuyConfig
@@ -124,14 +128,13 @@ install(EXPORT TGuyConfig
 if (${TGUY_BUILD_DOCS})
     find_package(Doxygen REQUIRED)
 
-    set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
+    set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
     set(DOXYGEN_EXTRACT_STATIC YES)
-    doxygen_add_docs(
-            _libtguy_docs
-            include
-            src
+    doxygen_add_docs(_${PROJECT_NAME}_docs
+            include src
+
             COMMENT "Generate docs"
-    )
-    add_custom_target(libtguy_docs ALL DEPENDS _libtguy_docs COMMAND "" BYPRODUCTS "${DOXYGEN_OUTPUT_DIRECTORY}")
-    install(DIRECTORY "${DOXYGEN_OUTPUT_DIRECTORY}" DESTINATION ${CMAKE_INSTALL_DOCDIR}/${PROJECT_NAME})
+            )
+    add_custom_target(${PROJECT_NAME}_docs ALL DEPENDS _${PROJECT_NAME}_docs COMMAND "" BYPRODUCTS "${DOXYGEN_OUTPUT_DIRECTORY}")
+    install(DIRECTORY "${DOXYGEN_OUTPUT_DIRECTORY}" DESTINATION "${CMAKE_INSTALL_DOCDIR}/${PROJECT_NAME}")
 endif ()
