@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.12)
+cmake_minimum_required(VERSION 3.15)
 
 include(cmake/PreventInSourceBuild.cmake)
 prevent_in_source_build()
@@ -67,12 +67,11 @@ else ()
     if (NOT utf8proc_POPULATED)
         FetchContent_Populate(utf8proc)
     endif ()
-    add_subdirectory(${utf8proc_SOURCE_DIR} ${utf8proc_BINARY_DIR})
 
-    get_target_property(UTF8PROC_INCLUDES utf8proc INTERFACE_INCLUDE_DIRECTORIES)
-    # link utf8proc object directly
+    add_subdirectory(${utf8proc_SOURCE_DIR} ${utf8proc_BINARY_DIR})
+    # requires cmake 3.15
     target_sources(${PROJECT_NAME} PRIVATE $<TARGET_OBJECTS:utf8proc>)
-    target_include_directories(${PROJECT_NAME} PRIVATE ${UTF8PROC_INCLUDES})
+    target_include_directories(${PROJECT_NAME} PRIVATE $<TARGET_PROPERTY:utf8proc,INTERFACE_INCLUDE_DIRECTORIES>)
 endif ()
 
 include(CheckLibraryExists)
@@ -88,8 +87,8 @@ include(GNUInstallDirs)
 
 target_include_directories(${PROJECT_NAME} PUBLIC
         "$<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}>"
-        
-        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
+
+        "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
         )
 
