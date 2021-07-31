@@ -24,14 +24,12 @@ option(BUILD_SHARED_LIBS "Whether to build a dynamic library" OFF)
 option(TGUY_USE_FASTCLEAR "Whether to double space usage to increase speed" ON)
 option(TGUY_BUILD_DOCS "Whether to build doxygen docs" OFF)
 
-message(STATUS "libtguy ${TGUY_VER}")
+message(STATUS "libtguy ${TGUY_VERSION}")
 
 if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
     set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install")
 endif ()
 
-
-find_package(UTF8Proc QUIET)
 
 add_library(${PROJECT_NAME} src/libtguy.c)
 add_library(${PACKAGE_NAME}::TGuy ALIAS ${PROJECT_NAME})
@@ -52,11 +50,13 @@ if (TGUY_USE_FASTCLEAR)
     target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_FASTCLEAR)
 endif ()
 
+find_package(UTF8Proc QUIET)
+
 if (UTF8Proc_FOUND)
     target_link_libraries(${PROJECT_NAME} PRIVATE utf8proc)
 else ()
     include(FetchContent)
-    message(WARNING "UTF8Proc not found, using git version...")
+    message(WARNING "UTF8Proc not found, embedding git version...")
 
     FetchContent_Declare(
             utf8proc
@@ -68,7 +68,7 @@ else ()
         FetchContent_Populate(utf8proc)
     endif ()
 
-    add_subdirectory(${utf8proc_SOURCE_DIR} ${utf8proc_BINARY_DIR})
+    add_subdirectory(${utf8proc_SOURCE_DIR} ${utf8proc_BINARY_DIR} EXCLUDE_FROM_ALL)
     # requires cmake 3.15
     target_sources(${PROJECT_NAME} PRIVATE $<TARGET_OBJECTS:utf8proc>)
     target_include_directories(${PROJECT_NAME} PRIVATE $<TARGET_PROPERTY:utf8proc,INTERFACE_INCLUDE_DIRECTORIES>)
@@ -143,11 +143,10 @@ if (${TGUY_BUILD_DOCS})
 
     set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
     set(DOXYGEN_EXTRACT_STATIC YES)
-    doxygen_add_docs(_${PROJECT_NAME}_docs
+    doxygen_add_docs(${PROJECT_NAME}_docs
             include src
 
-            COMMENT "Generate docs"
+            ALL
             )
-    add_custom_target(${PROJECT_NAME}_docs ALL DEPENDS _${PROJECT_NAME}_docs COMMAND "" BYPRODUCTS "${DOXYGEN_OUTPUT_DIRECTORY}")
     install(DIRECTORY "${DOXYGEN_OUTPUT_DIRECTORY}" DESTINATION "${CMAKE_INSTALL_DOCDIR}/${PROJECT_NAME}")
 endif ()
