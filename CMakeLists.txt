@@ -8,12 +8,12 @@ get_version_from_macro(
         HEADER include/libtguy.h
         PREFIX TGUY_VER_
         VERSIONS MAJOR MINOR PATCH
-        OUTPUT TGUY_VER)
+        OUTPUT TGUY_VERSION)
 
 set(PACKAGE_NAME TGuy)
 project(libtguy
         LANGUAGES C
-        VERSION "${TGUY_VER}"
+        VERSION "${TGUY_VERSION}"
         DESCRIPTION "TrashGuy C library created to be easily usable from other languages with CFFI support.")
 
 set(CMAKE_C_STANDARD 99)
@@ -104,6 +104,7 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         PREFIX ""
         )
 
+# install targets' resulting files
 install(TARGETS ${PROJECT_NAME}
         EXPORT ${PACKAGE_NAME}Config
         COMPONENT TGuy
@@ -113,16 +114,29 @@ install(TARGETS ${PROJECT_NAME}
         PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}"
         )
 
-export(TARGETS
-        ${PROJECT_NAME}
+# write export config into binary dir in order to find is as a subdirectory project
+export(TARGETS ${PROJECT_NAME}
+       NAMESPACE ${PACKAGE_NAME}::
+       FILE "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
+       )
+
+# install export configs into install dir to find it in a project setting ${PROJECT_NAME}_DIR variable to datadir/cmake
+install(EXPORT ${PACKAGE_NAME}Config
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake"
         NAMESPACE ${PACKAGE_NAME}::
-        FILE "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
         )
 
-install(EXPORT TGuyConfig
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake"
-        NAMESPACE TGuy::
+# write version config file into binary dir in order to find is as a subdirectory project
+include(CMakePackageConfigHelpers)
+write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}ConfigVersion.cmake"
+        VERSION "${PROJECT_VERSION}"
+        COMPATIBILITY SameMinorVersion
         )
+
+# install version config file into datadir/cmake
+install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}ConfigVersion.cmake"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake")
+
 
 if (${TGUY_BUILD_DOCS})
     find_package(Doxygen REQUIRED)
