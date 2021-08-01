@@ -61,6 +61,7 @@ else ()
     FetchContent_Declare(
             utf8proc
             GIT_REPOSITORY https://github.com/Wirtos/utf8proc
+            GIT_TAG 37ce59e2d3773036b3ca3c749f0fc5da9adc81e2
     )
 
     FetchContent_GetProperties(utf8proc)
@@ -114,8 +115,8 @@ install(TARGETS ${PROJECT_NAME}
         PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}"
         )
 
-# write export config into binary dir in order to find is as a subdirectory project
-export(TARGETS ${PROJECT_NAME}
+# write export config into binary dir in order to find is as an external project without installing
+export(EXPORT ${PACKAGE_NAME}Config
        NAMESPACE ${PACKAGE_NAME}::
        FILE "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
        )
