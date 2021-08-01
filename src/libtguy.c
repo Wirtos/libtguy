@@ -236,7 +236,7 @@ void tguy_set_frame(TrashGuyState *st, unsigned frame) {
         /* unsigned a = 1,*/
         unsigned b = (st->initial_frames_count - 1), c = frame;
         /* school math, see 1 */
-        unsigned element_index = ((unsigned) sqrt((b * b) + (c << 2)/* a */ ) - b) / 2 /* a */;
+        unsigned element_index = ((unsigned) sqrt((b * b) + (4 * c)/* a */ ) - b) / 2 /* a */;
         /* number of frames needed to process element, see 2 */
         unsigned frames_per_element = st->initial_frames_count + (2 * element_index);
         /* index of the frame in the frame series (up to frames_per_element) */
@@ -244,7 +244,7 @@ void tguy_set_frame(TrashGuyState *st, unsigned frame) {
         /* if we're in the first half frames we're moving right, otherwise left */
         unsigned right = (sub_frame < (frames_per_element / 2));
         /* TrashGuy index yields 0 twice, the difference is whether we're moving right or left */
-        unsigned i = right ? sub_frame : frames_per_element - sub_frame - 1;
+        unsigned i = (right) ? sub_frame : frames_per_element - sub_frame - 1;
 
         /* used to make set_frame faster by not setting same frame twice and to assert unset TrashGuyState */
         st->cur_frame = frame;
