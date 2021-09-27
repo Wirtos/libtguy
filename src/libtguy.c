@@ -18,10 +18,10 @@
  */
 
 /**
- * Array of TGStrings
+ * Array of TGStrViews
  */
 typedef struct {
-    TGString *data; /**< array of size len */
+    TGStrView *data; /**< array of size len */
     size_t len;     /**< length */
 } TrashField;
 
@@ -33,7 +33,7 @@ struct TrashGuyState {
     unsigned initial_frames_count; /**< number of frames spent to process first element,
                                     * computed from spacing provided by the user: \n
                                     *   <code> (\ref tguy_from_arr_ex() "spacing" + 1) * 2 </code> */
-    TGString sprite_right, /**< when facing right */
+    TGStrView sprite_right, /**< when facing right */
              sprite_left,  /**< when facing left */
              sprite_can,   /**< trash can sprite */
              sprite_space; /**< empty space sprite */
@@ -83,8 +83,8 @@ static inline void tguy_clear_field(TrashGuyState *st, unsigned n_clear_elements
         sizeof(*st->field.data) * (st->text.len - n_clear_elements));
 }
 
-TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacing,
-    TGString *sprite_space, TGString *sprite_can, TGString *sprite_right, TGString *sprite_left) {
+TrashGuyState *tguy_from_arr_ex(const TGStrView *arr, size_t len, unsigned spacing,
+    TGStrView *sprite_space, TGStrView *sprite_can, TGStrView *sprite_right, TGStrView *sprite_left) {
     struct TrashGuyState *st;
     assert(((void) "len is too big", len < (unsigned) -1));
     st = malloc(sizeof(*st));
@@ -92,10 +92,10 @@ TrashGuyState *tguy_from_arr_ex(const TGString *arr, size_t len, unsigned spacin
     {
         /* one frame for initial pos, spacing frames to walk over empty space to the first element, x2 to return back */
         st->initial_frames_count = (spacing + 1) * 2;
-        st->sprite_right  = (sprite_right) ? *sprite_right : TGSTR("(> ^_^)>");
-        st->sprite_left   = (sprite_left ) ? *sprite_left  : TGSTR("<(^_^ <)");
-        st->sprite_can    = (sprite_can  ) ? *sprite_can   : TGSTR("\xf0\x9f\x97\x91");
-        st->sprite_space  = (sprite_space) ? *sprite_space : TGSTR(" ");
+        st->sprite_right  = (sprite_right) ? *sprite_right : TGSTRV("(> ^_^)>");
+        st->sprite_left   = (sprite_left ) ? *sprite_left  : TGSTRV("<(^_^ <)");
+        st->sprite_can    = (sprite_can  ) ? *sprite_can   : TGSTRV("\xf0\x9f\x97\x91");
+        st->sprite_space  = (sprite_space) ? *sprite_space : TGSTRV(" ");
         /* len here is the actual number of elements to process, not restricted to letters/glyphs */
         st->text.len = len;
         /* additional 2 elements to hold the guy and can sprites */
@@ -149,13 +149,13 @@ fail:
     return NULL;
 }
 
-TrashGuyState *tguy_from_arr(const TGString *arr, size_t len, unsigned spacing) {
+TrashGuyState *tguy_from_arr(const TGStrView *arr, size_t len, unsigned spacing) {
     return tguy_from_arr_ex(arr, len, spacing, NULL, NULL, NULL, NULL);
 }
 
 TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) {
     TrashGuyState *st;
-    TGString *strarr;
+    TGStrView *strarr;
     size_t flen = 0;
     len = (len == (size_t) -1) ? strlen(string) : len;
     {
@@ -172,7 +172,7 @@ TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) 
         int read_bytes = 0;
         unsigned start, end;
         while (utf8proc_iterate_graphemes((unsigned char *) string, &read_bytes, len, &start, &end)) {
-            strarr[i] = (TGString) {&string[start], end - start};
+            strarr[i] = (TGStrView) {&string[start], end - start};
             i++;
         }
     }
@@ -233,10 +233,10 @@ void tguy_set_frame(TrashGuyState *st, unsigned frame) {
     assert(((void)"Frame is bigger than get_frames_count()", frame < st->max_frames));
     if (st->cur_frame == frame) return;
     {
-        /* unsigned a = 1,*/
+        /* unsigned a = 1; */
         unsigned b = (st->initial_frames_count - 1), c = frame;
         /* school math, see 1 */
-        unsigned element_index = ((unsigned) sqrt((b * b) + (4 * c)/* a */ ) - b) / 2 /* a */;
+        unsigned element_index = ((unsigned) sqrt((b * b) + (4 * c /* * a */ )) - b) / 2 /* * a */;
         /* number of frames needed to process element, see 2 */
         unsigned frames_per_element = st->initial_frames_count + (2 * element_index);
         /* index of the frame in the frame series (up to frames_per_element) */
@@ -281,7 +281,7 @@ void tguy_bprint(const TrashGuyState *st, char *buf) {
     *buf = '\0';
 }
 
-const TGString *tguy_get_arr(const TrashGuyState *st, size_t *len) {
+const TGStrView *tguy_get_arr(const TrashGuyState *st, size_t *len) {
     assert(st->cur_frame != (unsigned) -1);
     *len = st->field.len;
     return st->field.data;
