@@ -236,7 +236,7 @@ void tguy_set_frame(TrashGuyState *st, unsigned frame) {
         /* unsigned a = 1; */
         unsigned b = (st->initial_frames_count - 1), c = frame;
         /* school math, see 1 */
-        unsigned element_index = ((unsigned) sqrt((b * b) + (4 * c /* * a */ )) - b) / 2 /* * a */;
+        unsigned element_index = ((unsigned) sqrt((b * b) + (4 * c)) - b) / 2;
         /* number of frames needed to process element, see 2 */
         unsigned frames_per_element = st->initial_frames_count + (2 * element_index);
         /* index of the frame in the frame series (up to frames_per_element) */
@@ -307,14 +307,11 @@ size_t tguy_get_bsize(TrashGuyState *st) {
     /* overall text length */
     for (size_t i = 0, tlen = st->text.len; i < tlen; i++) {
         /* element will be replaced with space (filler sprite) eventually
-         * by choosing the largest ensure the buffer is large enough */
+         * by choosing the largest ensure the buffer is big enough */
         sz += tg_max(st->text.data[i].len, st->sprite_space.len);
     }
     /* overall free space length */
-    for (size_t i = 0, slen = (st->initial_frames_count / 2) - 1; i < slen; i++) {
-        sz += st->sprite_space.len;
-    }
-
+    sz += st->sprite_space.len * ((st->initial_frames_count / 2) - 1);
     sz += st->sprite_can.len;
     sz += tg_max(st->sprite_right.len, st->sprite_left.len);
 
