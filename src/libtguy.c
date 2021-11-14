@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <utf8proc.h>
 
+#define ignored_ (void)
+
 /**
  * @file libtguy.c
  */
@@ -86,7 +88,7 @@ static inline void tguy_clear_field(TrashGuyState *st, unsigned n_clear_elements
 TrashGuyState *tguy_from_arr_ex(const TGStrView *arr, size_t len, unsigned spacing,
     TGStrView *sprite_space, TGStrView *sprite_can, TGStrView *sprite_right, TGStrView *sprite_left) {
     struct TrashGuyState *st;
-    assert(((void) "len is too big", len < (unsigned) -1));
+    assert((ignored_"len is too big", len < (unsigned) -1));
     st = malloc(sizeof(*st));
     if (st == NULL) goto fail;
     {
@@ -230,7 +232,7 @@ void tguy_free(TrashGuyState *st) {
 void tguy_set_frame(TrashGuyState *st, unsigned frame) {
     /*         a                        b                              c       */
     /* (element_index)^2 + (initial_frames_count - 1)element_index - frame = 0 */
-    assert(((void)"Frame is bigger than get_frames_count()", frame < st->max_frames));
+    assert((ignored_"Frame is bigger than get_frames_count()", frame < st->max_frames));
     if (st->cur_frame == frame) return;
     {
         /* unsigned a = 1; */
