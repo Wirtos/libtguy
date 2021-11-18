@@ -263,24 +263,29 @@ void tguy_set_frame(TrashGuyState *st, unsigned frame) {
     }
 }
 
-void tguy_fprint(const TrashGuyState *st, FILE *fp) {
+size_t tguy_fprint(const TrashGuyState *st, FILE *fp) {
     assert(st->cur_frame != (unsigned) -1);
+    size_t len = 0;
     for (size_t i = 0, flen = st->field.len; i < flen; i++) {
-        fprintf(fp, "%.*s", (int) st->field.data[i].len, st->field.data[i].str);
+        TGStrView sv = st->field.data[i];
+        len += fprintf(fp, "%.*s", (int) sv.len, sv.str);
     }
+    return len;
 }
 
-void tguy_print(const TrashGuyState *st) { tguy_fprint(st, stdout); }
+size_t tguy_print(const TrashGuyState *st) { return tguy_fprint(st, stdout); }
 
-void tguy_bprint(const TrashGuyState *st, char *buf) {
+size_t tguy_sprint(const TrashGuyState *st, char *buf) {
     assert(st->cur_frame != (unsigned) -1);
+    char *start = buf;
     for (size_t i = 0, flen = st->field.len; i < flen; i++) {
-        const char *s = st->field.data[i].str;
-        for (size_t j = 0, slen = st->field.data[i].len; j < slen; j++) {
-            *buf++ = s[j];
+        TGStrView sv = st->field.data[i];
+        for (size_t j = 0, slen = sv.len; j < slen; j++) {
+            *buf++ = sv.str[j];
         }
     }
     *buf = '\0';
+    return buf - start;
 }
 
 const TGStrView *tguy_get_arr(const TrashGuyState *st, size_t *len) {

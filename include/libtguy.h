@@ -16,9 +16,9 @@
 /**MAJOR*/
 #define TGUY_VER_MAJOR 0
 /**MINOR*/
-#define TGUY_VER_MINOR 6
+#define TGUY_VER_MINOR 7
 /**PATCH*/
-#define TGUY_VER_PATCH 1
+#define TGUY_VER_PATCH 0
 
 /**@}*/
 
@@ -104,21 +104,24 @@ LIBTGUY_EXPORT size_t tguy_get_bsize(TrashGuyState *st);
  *  Writes currently set TrashGuy frame to fp without newline
  * @param st           Valid \ref TrashGuyState with frame set
  * @param fp           Valid FILE
+ * @return             Number of characters written
  */
-LIBTGUY_EXPORT void tguy_fprint(const TrashGuyState *st, FILE *fp);
+LIBTGUY_EXPORT size_t tguy_fprint(const TrashGuyState *st, FILE *fp);
 
 /**
  *  Writes currently set TrashGuy frame to stdout without newline
  * @param st           Valid \ref TrashGuyState with frame set
+ * @return             Number of characters written
  */
-LIBTGUY_EXPORT void tguy_print(const TrashGuyState *st);
+LIBTGUY_EXPORT size_t tguy_print(const TrashGuyState *st);
 
 /**
- *  Writes currently set TrashGuy frame to buffer without newline
+ *  Writes currently set TrashGuy frame to buffer and appends nul terminator
  * @param st           Valid \ref TrashGuyState with frame set
  * @param buf          Buffer at least tguy_get_bsize() bytes large
+ * @return             Number of characters written, excluding the nul terminator
  */
-LIBTGUY_EXPORT void tguy_bprint(const TrashGuyState *st, char *buf);
+LIBTGUY_EXPORT size_t tguy_sprint(const TrashGuyState *st, char *buf);
 
 /**
  *  Returns read-only array of TrashGuy frame
