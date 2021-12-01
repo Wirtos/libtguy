@@ -56,7 +56,7 @@ if (UTF8Proc_FOUND)
     target_link_libraries(${PROJECT_NAME} PRIVATE utf8proc)
 else ()
     include(FetchContent)
-    message(WARNING "UTF8Proc not found, embedding git version...")
+    message(STATUS "UTF8Proc not found, embedding git version...")
 
     FetchContent_Declare(
             utf8proc
@@ -64,12 +64,8 @@ else ()
             GIT_TAG 37ce59e2d3773036b3ca3c749f0fc5da9adc81e2
     )
 
-    FetchContent_GetProperties(utf8proc)
-    if (NOT utf8proc_POPULATED)
-        FetchContent_Populate(utf8proc)
-    endif ()
+    FetchContent_MakeAvailable(utf8proc)
 
-    add_subdirectory(${utf8proc_SOURCE_DIR} ${utf8proc_BINARY_DIR} EXCLUDE_FROM_ALL)
     # requires cmake 3.15
     target_sources(${PROJECT_NAME} PRIVATE $<TARGET_OBJECTS:utf8proc>)
     target_include_directories(${PROJECT_NAME} PRIVATE $<TARGET_PROPERTY:utf8proc,INTERFACE_INCLUDE_DIRECTORIES>)
