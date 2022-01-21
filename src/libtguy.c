@@ -28,6 +28,22 @@ typedef struct {
 } TrashField;
 
 /**
+ *
+ * @param str  string or NULL
+ * @param len  str length or -1 if string is nul terminated
+ * @return out or NULL if str is NULL
+ */
+static TGStrView *cstrtstrv(TGStrView out[1], const char *str, size_t len) {
+    if (str == NULL) {
+        return NULL;
+    } else {
+        out->str = str;
+        out->len = (len == (size_t) -1) ? strlen(str) : len;
+        return out;
+    }
+}
+
+/**
  * Struct to keep relevant TrashGuy data
  */
 struct TrashGuyState {
@@ -47,6 +63,7 @@ struct TrashGuyState {
     unsigned cur_frame;     /**< current frame set, initially UINT_MAX */
     unsigned max_frames;    /**< number of frames animation takes to complete -> 0 <= frame < max_frames */
     size_t bufsize;         /**< computed size of the buffer to store one frame as string representation, initially 0 */
+    char *output_str;
 };
 
 /**
@@ -113,6 +130,7 @@ TrashGuyState *tguy_from_arr_ex(const TGStrView *arr, size_t len, unsigned spaci
         /* number of frames up to the last + 1 */
         st->max_frames = get_frame_lower_boundary(st->initial_frames_count, (unsigned) st->text.len) + 1;
         st->udata = NULL;
+        st->output_str = NULL;
     }
     {
         size_t fields_data_sz = (st->text.len + st->field.len
@@ -155,9 +173,11 @@ TrashGuyState *tguy_from_arr(const TGStrView *arr, size_t len, unsigned spacing)
     return tguy_from_arr_ex(arr, len, spacing, NULL, NULL, NULL, NULL);
 }
 
-TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) {
+TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacing,
+    const char *sprite_space, const char *sprite_can, const char *sprite_right, const char *sprite_left) {
     TrashGuyState *st;
     TGStrView *strarr;
+    TGStrView sv_sprite_space, sv_sprite_can, sv_sprite_right, sv_sprite_left;
     size_t flen = 0;
     len = (len == (size_t) -1) ? strlen(string) : len;
     {
@@ -178,13 +198,22 @@ TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) 
             i++;
         }
     }
-    st = tguy_from_arr(strarr, flen, spacing);
+
+    st = tguy_from_arr_ex(strarr, flen, spacing,
+        cstrtstrv(&sv_sprite_space, sprite_space, -1),
+        cstrtstrv(&sv_sprite_can, sprite_can, -1),
+        cstrtstrv(&sv_sprite_right, sprite_right, -1),
+        cstrtstrv(&sv_sprite_left, sprite_left, -1));
     if (st == NULL) {
         free(strarr);
     } else {
         st->udata = strarr;
     }
     return st;
+}
+
+TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) {
+    return tguy_from_utf8_ex(string, len, spacing, NULL, NULL, NULL, NULL);
 }
 
 /**
@@ -194,6 +223,7 @@ void tguy_free(TrashGuyState *st) {
     if (st == NULL) return;
     free(st->udata);
     free(st->text.data);
+    free(st->output_str);
     free(st);
 }
 
@@ -327,3 +357,17 @@ size_t tguy_get_bsize(TrashGuyState *st) {
 }
 
 #undef tg_max
+
+const char *tguy_get_string(TrashGuyState *st, size_t *len) {
+    size_t plen;
+    if (st->output_str == NULL) {
+        st->output_str = malloc(tguy_get_bsize(st));
+    }
+    if (st->output_str == NULL) {
+        plen = 0;
+    } else {
+        plen = tguy_sprint(st, st->output_str);
+    }
+    if (len != NULL) *len = plen;
+    return st->output_str;
+}

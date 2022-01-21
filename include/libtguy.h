@@ -16,7 +16,7 @@
 /**MAJOR*/
 #define TGUY_VER_MAJOR 0
 /**MINOR*/
-#define TGUY_VER_MINOR 7
+#define TGUY_VER_MINOR 8
 /**PATCH*/
 #define TGUY_VER_PATCH 0
 
@@ -65,6 +65,20 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_arr_ex(const TGStrView *arr, size_t len,
 LIBTGUY_EXPORT TrashGuyState *tguy_from_arr(const TGStrView *arr, size_t len, unsigned spacing);
 
 /**
+ * todo: docs
+ * @param string
+ * @param len
+ * @param spacing
+ * @param sprite_space
+ * @param sprite_can
+ * @param sprite_right
+ * @param sprite_left
+ * @return
+ */
+LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacing,
+    const char *sprite_space, const char *sprite_can, const char *sprite_right, const char *sprite_left);
+
+/**
  *  Creates new TrashGuysState from valid utf-8 string
  * @param string       valid utf-8 string, each grapheme cluster is a separate element for TrashGuy to dump to the bin
  * @param len          Number of bytes string has, if -1, then strlen will be used
@@ -94,13 +108,6 @@ LIBTGUY_EXPORT void tguy_set_frame(TrashGuyState *st, unsigned frame);
 LIBTGUY_EXPORT unsigned tguy_get_frames_count(const TrashGuyState *st);
 
 /**
- *  Get buffer size large enough to hold one frame including nul terminator
- * @param st           Valid \ref TrashGuyState
- * @return             Needed buffer size in bytes
- */
-LIBTGUY_EXPORT size_t tguy_get_bsize(TrashGuyState *st);
-
-/**
  *  Writes currently set TrashGuy frame to fp without newline
  * @param st           Valid \ref TrashGuyState with frame set
  * @param fp           Valid FILE
@@ -124,11 +131,26 @@ LIBTGUY_EXPORT size_t tguy_print(const TrashGuyState *st);
 LIBTGUY_EXPORT size_t tguy_sprint(const TrashGuyState *st, char *buf);
 
 /**
+ *  Get buffer size large enough to hold one frame including nul terminator
+ * @param st           Valid \ref TrashGuyState
+ * @return             Needed buffer size in bytes
+ */
+LIBTGUY_EXPORT size_t tguy_get_bsize(TrashGuyState *st);
+
+/**
  *  Returns read-only array of TrashGuy frame
  * @param st           Valid \ref TrashGuyState with frame set
  * @param[out] len     Length of the returned array
  * @return             Array of const TGStrView
  */
 LIBTGUY_EXPORT const TGStrView *tguy_get_arr(const TrashGuyState *st, size_t *len);
+
+/**
+ *  Return pointer to utf-8 encoded null terminated string containing current set frame
+ * @param st          Valid \ref TrashGuyState with frame set
+ * @param[out] len    Length of the returned string
+ * @return
+ */
+LIBTGUY_EXPORT const char *tguy_get_string(TrashGuyState *st, size_t *len);
 
 #endif /* LIBTGUY_H */
