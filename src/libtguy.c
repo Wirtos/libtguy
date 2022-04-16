@@ -174,15 +174,18 @@ TrashGuyState *tguy_from_arr(const TGStrView *arr, size_t len, unsigned spacing)
 }
 
 TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacing,
-    const char *sprite_space, const char *sprite_can, const char *sprite_right, const char *sprite_left) {
+    const char *sprite_space, size_t sprite_space_len,
+    const char *sprite_can, size_t sprite_can_len,
+    const char *sprite_right, size_t sprite_right_len,
+    const char *sprite_left, size_t sprite_left_len) {
     TrashGuyState *st;
     TGStrView *strarr;
     TGStrView sv_sprite_space, sv_sprite_can, sv_sprite_right, sv_sprite_left;
     size_t flen = 0;
     len = (len == (size_t) -1) ? strlen(string) : len;
     {
-        int read_bytes = 0;
-        unsigned start, end;
+        int32_t read_bytes = 0;
+        uint32_t start, end;
         while (utf8proc_iterate_graphemes((unsigned char *) string, &read_bytes, len, &start, &end)) {
             flen++;
         }
@@ -191,8 +194,8 @@ TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacin
     if (strarr == NULL) return NULL;
     { /* fill the array with ranges of the string representing whole utf-8 grapheme clusters */
         size_t i = 0;
-        int read_bytes = 0;
-        unsigned start, end;
+        int32_t read_bytes = 0;
+        uint32_t start, end;
         while (utf8proc_iterate_graphemes((unsigned char *) string, &read_bytes, len, &start, &end)) {
             strarr[i] = (TGStrView) {&string[start], end - start};
             i++;
@@ -200,10 +203,10 @@ TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacin
     }
 
     st = tguy_from_arr_ex(strarr, flen, spacing,
-        cstrtstrv(&sv_sprite_space, sprite_space, -1),
-        cstrtstrv(&sv_sprite_can, sprite_can, -1),
-        cstrtstrv(&sv_sprite_right, sprite_right, -1),
-        cstrtstrv(&sv_sprite_left, sprite_left, -1));
+        cstrtstrv(&sv_sprite_space, sprite_space, sprite_space_len),
+        cstrtstrv(&sv_sprite_can, sprite_can, sprite_can_len),
+        cstrtstrv(&sv_sprite_right, sprite_right, sprite_right_len),
+        cstrtstrv(&sv_sprite_left, sprite_left, sprite_left_len));
     if (st == NULL) {
         free(strarr);
     } else {
@@ -213,7 +216,11 @@ TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacin
 }
 
 TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) {
-    return tguy_from_utf8_ex(string, len, spacing, NULL, NULL, NULL, NULL);
+    return tguy_from_utf8_ex(string, len, spacing,
+        NULL, 0,
+        NULL, 0,
+        NULL, 0,
+        NULL, 0);
 }
 
 /**

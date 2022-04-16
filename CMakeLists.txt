@@ -26,10 +26,6 @@ option(TGUY_BUILD_DOCS "Whether to build doxygen docs" OFF)
 
 message(STATUS "libtguy ${TGUY_VERSION}")
 
-if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
-    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install")
-endif ()
-
 
 add_library(${PROJECT_NAME} src/libtguy.c)
 add_library(${PACKAGE_NAME}::TGuy ALIAS ${PROJECT_NAME})
@@ -61,7 +57,7 @@ else ()
     FetchContent_Declare(
             utf8proc
             GIT_REPOSITORY https://github.com/Wirtos/utf8proc
-            GIT_TAG 37ce59e2d3773036b3ca3c749f0fc5da9adc81e2
+            GIT_TAG 32e5982d7f03b53ba50a139f038ceaa357257202
     )
 
     FetchContent_MakeAvailable(utf8proc)
@@ -101,6 +97,26 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
         PREFIX ""
         )
 
+if (EMSCRIPTEN)
+    # this is ugly but emscripten toolchain is dumb and doesn't have an option to build library target as wasm
+    # gather all the properties required to build the lib and make it an executable
+    add_executable(${PROJECT_NAME}_wasm $<TARGET_PROPERTY:${PROJECT_NAME},SOURCES>)
+    target_link_libraries(${PROJECT_NAME}_wasm PRIVATE $<TARGET_PROPERTY:${PROJECT_NAME},LINK_LIBRARIES>)
+    target_include_directories(${PROJECT_NAME}_wasm PRIVATE $<TARGET_PROPERTY:${PROJECT_NAME},INCLUDE_DIRECTORIES>)
+    target_link_options(${PROJECT_NAME}_wasm PRIVATE
+            --closure=1
+            -sEXPORTED_RUNTIME_METHODS=[cwrap,allocateUTF8,UTF8ToString]
+            -sEXPORTED_FUNCTIONS=[_malloc,_free])
+    # cmake emits EXPORT as __attribute__((default)), which doesn't actually keep the function alive in emscripten
+    target_compile_definitions(${PROJECT_NAME}_wasm PRIVATE -DLIBTGUY_EXPORT=__attribute__\(\(used\)\))
+    set(TGUY_WASM_BASE_NAME $<TARGET_FILE_PREFIX:${PROJECT_NAME}>$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>)
+    set_target_properties(${PROJECT_NAME}_wasm PROPERTIES OUTPUT_NAME ${TGUY_WASM_BASE_NAME})
+    install(FILES
+            ${CMAKE_CURRENT_BINARY_DIR}/${TGUY_WASM_BASE_NAME}.wasm
+            ${CMAKE_CURRENT_BINARY_DIR}/${TGUY_WASM_BASE_NAME}.js
+            DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
+endif ()
+
 # install targets' resulting files
 install(TARGETS ${PROJECT_NAME}
         EXPORT ${PACKAGE_NAME}Config
@@ -113,9 +129,9 @@ install(TARGETS ${PROJECT_NAME}
 
 # write export config into binary dir in order to find is as an external project without installing
 export(EXPORT ${PACKAGE_NAME}Config
-       NAMESPACE ${PACKAGE_NAME}::
-       FILE "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
-       )
+        NAMESPACE ${PACKAGE_NAME}::
+        FILE "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
+        )
 
 # install export configs into install dir to find it in a project setting ${PROJECT_NAME}_DIR variable to datadir/cmake
 install(EXPORT ${PACKAGE_NAME}Config
@@ -135,7 +151,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}ConfigVersion.cmake"
         DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake")
 
 
-if (${TGUY_BUILD_DOCS})
+if (TGUY_BUILD_DOCS)
     find_package(Doxygen REQUIRED)
 
     set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
@@ -146,4 +162,8 @@ if (${TGUY_BUILD_DOCS})
             ALL
             )
     install(DIRECTORY "${DOXYGEN_OUTPUT_DIRECTORY}" DESTINATION "${CMAKE_INSTALL_DOCDIR}/${PROJECT_NAME}")
+endif ()
+
+if (CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
+    set(CMAKE_INSTALL_PREFIX "${CMAKE_CURRENT_BINARY_DIR}/install" CACHE PATH "Where to install the library" FORCE)
 endif ()

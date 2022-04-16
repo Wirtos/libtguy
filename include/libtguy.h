@@ -16,7 +16,7 @@
 /**MAJOR*/
 #define TGUY_VER_MAJOR 0
 /**MINOR*/
-#define TGUY_VER_MINOR 8
+#define TGUY_VER_MINOR 9
 /**PATCH*/
 #define TGUY_VER_PATCH 0
 
@@ -76,7 +76,10 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_arr(const TGStrView *arr, size_t len, un
  * @return
  */
 LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacing,
-    const char *sprite_space, const char *sprite_can, const char *sprite_right, const char *sprite_left);
+    const char *sprite_space, size_t sprite_space_len,
+    const char *sprite_can, size_t sprite_can_len,
+    const char *sprite_right, size_t sprite_right_len,
+    const char *sprite_left, size_t sprite_left_len);
 
 /**
  *  Creates new TrashGuysState from valid utf-8 string
