@@ -13,8 +13,8 @@
  */
 
 /** \mainpage
- * For API documentation see \ref libtguy.h. \n
- * For implementation details see \ref libtguy.c. \n
+ * For API documentation see libtguy.h. \n
+ * For implementation details see libtguy.c. \n
  * For example python CFFI see
  *  <a href='https://gist.github.com/Wirtos/b9e0554e807109e6be14b136a5e737f2'>libtguy_python</a>.
  */
@@ -25,21 +25,21 @@
 typedef struct {
     TGStrView *data; /**< array of size len */
     size_t len;     /**< length */
-} TrashField;
+} TGStrViewArr;
 
 /**
- *
+ * @param[out] res  where to keep resulting TGStrView for str
  * @param str  string or NULL
  * @param len  str length or -1 if string is nul terminated
- * @return out or NULL if str is NULL
+ * @return res or NULL if str is NULL
  */
-static TGStrView *cstrtstrv(TGStrView out[1], const char *str, size_t len) {
+static TGStrView *cstrtstrv(TGStrView res[1], const char *str, size_t len) {
     if (str == NULL) {
         return NULL;
     } else {
-        out->str = str;
-        out->len = (len == (size_t) -1) ? strlen(str) : len;
-        return out;
+        res->str = str;
+        res->len = (len == (size_t) -1) ? strlen(str) : len;
+        return res;
     }
 }
 
@@ -47,36 +47,36 @@ static TGStrView *cstrtstrv(TGStrView out[1], const char *str, size_t len) {
  * Struct to keep relevant TrashGuy data
  */
 struct TrashGuyState {
-    void *udata; /**< pointer to user-allocated memory */
     unsigned initial_frames_count; /**< number of frames spent to process first element,
                                     * computed from spacing provided by the user: \n
                                     *   <code> (\ref tguy_from_arr_ex() "spacing" + 1) * 2 </code> */
-    TGStrView sprite_right, /**< when facing right */
-             sprite_left,  /**< when facing left */
-             sprite_can,   /**< trash can sprite */
-             sprite_space; /**< empty space sprite */
-    TrashField text;       /**< elements for TrashGuy to process, each one can contain one or more characters */
-    TrashField field;      /**< array where we place current element */
-    #ifdef TGUY_FASTCLEAR
-    TrashField empty_field_;/**< field, but filled with only trash can and space sprites */
-    #endif
-    unsigned cur_frame;     /**< current frame set, initially UINT_MAX */
-    unsigned max_frames;    /**< number of frames animation takes to complete -> 0 <= frame < max_frames */
-    size_t bufsize;         /**< computed size of the buffer to store one frame as string representation, initially 0 */
-    char *output_str;
+    TGStrView sprite_right,     /**< when facing right */
+              sprite_left,      /**< when facing left */
+              sprite_can,       /**< trash can sprite */
+              sprite_space;     /**< empty space sprite */
+    TGStrViewArr text;          /**< elements for TrashGuy to process, each one can contain one or more characters */
+    TGStrViewArr arena;         /**< array where we place current element */
+#ifdef TGUY_FASTCLEAR
+    TGStrViewArr empty_arena_;  /**< arena, but filled with only trash can and space sprites */
+#endif
+    unsigned cur_frame;         /**< current frame set, initially UINT_MAX */
+    unsigned max_frames;        /**< number of frames animation takes to complete -> 0 <= frame < max_frames */
+    size_t bufsize;             /**< computed size of the buffer to store one frame as string representation */
+    char *output_str;           /**< optional pointer to output string is stored here */
+    TGStrView views_mem[];      /**< array of allocated views which are later distributed among fields */
 };
 
 /**
- *  Returns first frame of sequence of frames involving the work with element_index of \ref TrashGuyState::text. \n
+ *  Returns first frame of sequence of frames involving the work with element_index of TrashGuyState::text. \n
  *  You can perceive this function as a parabola, where each x is element_index and y is returned frame (starts from 0): \n
- *  <code> frame = element_index<sup>2</sup> + (\ref TrashGuyState::initial_frames_count "initial_frames_count" - 1)element_index </code> \n
+ *  <code> frame = element_index<sup>2</sup> + (TrashGuyState::initial_frames_count - 1)element_index </code> \n
  *  See <a href='https://www.desmos.com/calculator/6z0ewdyxpq'>this visualization</a>. \n
  *  For example: \n
  *      <code> (get_frame_lower_boundary(4, i + 1) - get_frame_lower_boundary(4, i)) </code> \n
  *  will yield number of frames needed to process i-th element if
- *   \ref TrashGuyState::initial_frames_count "initial_frames_count" was 4. \n
- * @param initial_frames_count  \ref TrashGuyState::initial_frames_count
- * @param element_index         index of text element in \ref TrashGuyState::text[element_index]
+ *   TrashGuyState::initial_frames_count was 4. \n
+ * @param initial_frames_count  TrashGuyState::initial_frames_count
+ * @param element_index         index of text element in TrashGuyState::text[element_index]
  * @return                      first frame of for element_index
  */
 static inline unsigned get_frame_lower_boundary(unsigned initial_frames_count, unsigned element_index) {
@@ -84,89 +84,175 @@ static inline unsigned get_frame_lower_boundary(unsigned initial_frames_count, u
 }
 
 /**
- *  Replaces \ref TrashGuyState::field[1:n+1] with with \ref TrashGuyState::sprite_space
- * @param st                Valid \ref TrashGuyState
- * @param n_clear_elements  number of \ref TrashGuyState::text elements to clear with \ref TrashGuyState::sprite_space
+ *  Replaces TrashGuyState::arena[1:n+1] with with TrashGuyState::sprite_space
+ * @param st                Valid TrashGuyState
+ * @param n_clear_elements  number of TrashGuyState::text elements to clear with TrashGuyState::sprite_space
  */
 static inline void tguy_clear_field(TrashGuyState *st, unsigned n_clear_elements) {
-    unsigned items_offset = st->field.len - st->text.len + n_clear_elements;
-    #ifdef TGUY_FASTCLEAR
-    memcpy(&st->field.data[0], &st->empty_field_.data[0],
-        items_offset * sizeof(*st->field.data));
-    #else
+    unsigned items_offset = st->arena.len - st->text.len + n_clear_elements;
+#ifdef TGUY_FASTCLEAR
+    memcpy(&st->arena.data[0], &st->empty_arena_.data[0],
+        items_offset * sizeof(*st->arena.data));
+#else
     for (size_t i = 1; i < items_offset; i++) {
-        st->field.data[i] = st->sprite_space;
+        st->arena.data[i] = st->sprite_space;
     }
-    #endif
-    memcpy(&st->field.data[items_offset], &st->text.data[n_clear_elements],
-        sizeof(*st->field.data) * (st->text.len - n_clear_elements));
+#endif
+    memcpy(&st->arena.data[items_offset], &st->text.data[n_clear_elements],
+        sizeof(*st->arena.data) * (st->text.len - n_clear_elements));
+}
+
+static size_t strvarr_strlen(const TGStrView *arr, size_t len) {
+    size_t plen = 0;
+    for (size_t i = 0; i < len; i++) {
+        plen += arr[i].len;
+    }
+    return plen;
+}
+
+static size_t strvarr_write(char *str_out, const TGStrView *arr, size_t len) {
+    size_t plen = 0;
+    for (size_t i = 0; i < len; i++) {
+        memcpy(&str_out[plen], arr[i].str, arr[i].len);
+        plen += arr[i].len;
+    }
+    return plen;
+}
+
+/* like strvarr_copy but uses str_mem as source for dst, it's assumed to be at least strvarr_strlen in size */
+static size_t strvarr_copy_src(TGStrView *dst, const TGStrView *src, size_t len, const char *str_mem) {
+    size_t si = 0;
+    for (size_t i = 0; i < len; i++) {
+        dst[i].len = src[i].len;
+        dst[i].str = &str_mem[si];
+        si += dst[i].len;
+    }
+    return si;
+}
+
+/* copy one array of strviews into another */
+static void strvarr_copy(TGStrView *dst, const TGStrView *src, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        dst[i] = src[i];
+    }
+}
+
+TrashGuyState *tguy_from_arr_ex_2(const TGStrView *arr, size_t len, unsigned spacing,
+    TGStrView *sprite_space, TGStrView *sprite_can, TGStrView *sprite_right, TGStrView *sprite_left,
+    int preserve_strings) {
+    struct TrashGuyState *st;
+    size_t str_len = 0;
+    char *str_mem;
+    const size_t
+        arena_len = 2 + spacing + len, /* 2 additional places for can and tguy sprites */
+        all_fields_len = (
+            len
+            + arena_len
+            #ifdef TGUY_FASTCLEAR
+            + arena_len
+            #endif
+        ),
+        str_mem_off = offsetof(TrashGuyState, views_mem) + sizeof(TGStrView) * all_fields_len;
+    TGStrView
+        sv_right = (sprite_right) ? *sprite_right : TGSTRV("(> ^_^)>"),
+        sv_left  = (sprite_left ) ? *sprite_left  : TGSTRV("<(^_^ <)"),
+        sv_can   = (sprite_can  ) ? *sprite_can   : TGSTRV("\xf0\x9f\x97\x91"),
+        sv_space = (sprite_space) ? *sprite_space : TGSTRV(" ");
+
+    assert((ignored_"len is too big", len < (unsigned) -1));
+    if (preserve_strings) {
+        str_len = strvarr_strlen(arr, len)
+                  + sv_right.len
+                  + sv_left.len
+                  + sv_can.len
+                  + sv_space.len;
+    }
+    st = malloc(str_mem_off + sizeof(char) * str_len);
+    if (st == NULL) return NULL;
+
+    st->sprite_right = sv_right;
+    st->sprite_left = sv_left;
+    st->sprite_can = sv_can;
+    st->sprite_space = sv_space;
+
+
+    /* len here is the actual number of elements to process, not restricted to letters/glyphs */
+    st->text = (TGStrViewArr) {
+        st->views_mem,
+        len
+    };
+
+    st->arena = (TGStrViewArr) {
+        st->text.data + len,
+        arena_len
+    };
+
+#ifdef TGUY_FASTCLEAR
+    /* fastclear option exploits the fact that linear memory copy is way faster to fill the arena with spaces */
+    st->empty_arena_ = (TGStrViewArr) {
+        st->arena.data + arena_len,
+        arena_len
+    };
+#endif
+
+    if (preserve_strings) {
+        /* copy strings from views to allocated linear memory block, then assign new addresses to views */
+        char *str_base;
+        str_mem = (char *) st + str_mem_off;
+        str_base = str_mem;
+        str_mem += strvarr_write(str_mem, arr, len);
+
+        st->sprite_right.str = str_mem;
+        str_mem += strvarr_write(str_mem, &sv_right, 1);
+
+        st->sprite_left.str = str_mem;
+        str_mem += strvarr_write(str_mem, &sv_left, 1);
+
+        st->sprite_can.str = str_mem;
+        str_mem += strvarr_write(str_mem, &sv_can, 1);
+
+        st->sprite_space.str = str_mem;
+        (void) strvarr_write(str_mem, &sv_space, 1);
+
+        str_mem = str_base;
+    }
+
+    /* fields initialization */
+    st->arena.data[0] = st->sprite_can;
+
+#ifdef TGUY_FASTCLEAR
+    /* empty arena has the same size as arena, it's only filled with spaces and trash can sprite as first element */
+    st->empty_arena_.data[0] = st->sprite_can;
+    for (size_t i = 1, flen = st->empty_arena_.len; i < flen; i++) {
+        st->empty_arena_.data[i] = st->sprite_space;
+    }
+#endif
+
+    if (preserve_strings) {
+        strvarr_copy_src(st->text.data, arr, len, str_mem);
+    } else {
+        strvarr_copy(st->text.data, arr, len);
+    }
+
+    /* one frame for initial pos, spacing frames to walk over empty space to the first element, x2 to return back */
+    st->initial_frames_count = (spacing + 1) * 2;
+    /* not computed yet and may not be computed at all */
+    st->bufsize = 0;
+    /* used to determine whether we should run set_frame and for unset assertions */
+    st->cur_frame = (unsigned) -1;
+    /* number of frames up to the last + 1 */
+    st->max_frames = get_frame_lower_boundary(st->initial_frames_count, (unsigned) st->text.len) + 1;
+    st->output_str = NULL;
+
+    /* no need to clear the arena because set_frame will do it anyway */
+    /* calling print functions or get_arr at this point is undefined behavior */
+
+    return st;
 }
 
 TrashGuyState *tguy_from_arr_ex(const TGStrView *arr, size_t len, unsigned spacing,
     TGStrView *sprite_space, TGStrView *sprite_can, TGStrView *sprite_right, TGStrView *sprite_left) {
-    struct TrashGuyState *st;
-    assert((ignored_"len is too big", len < (unsigned) -1));
-    st = malloc(sizeof(*st));
-    if (st == NULL) goto fail;
-    {
-        /* one frame for initial pos, spacing frames to walk over empty space to the first element, x2 to return back */
-        st->initial_frames_count = (spacing + 1) * 2;
-        st->sprite_right  = (sprite_right) ? *sprite_right : TGSTRV("(> ^_^)>");
-        st->sprite_left   = (sprite_left ) ? *sprite_left  : TGSTRV("<(^_^ <)");
-        st->sprite_can    = (sprite_can  ) ? *sprite_can   : TGSTRV("\xf0\x9f\x97\x91");
-        st->sprite_space  = (sprite_space) ? *sprite_space : TGSTRV(" ");
-        /* len here is the actual number of elements to process, not restricted to letters/glyphs */
-        st->text.len = len;
-        /* additional 2 elements to hold the guy and can sprites */
-        st->field.len = 2 + spacing + st->text.len;
-        #ifdef TGUY_FASTCLEAR
-        /* fastclear option exploits the fact that linear memory copy is way faster to fill the field with spaces */
-        st->empty_field_.len = st->field.len;
-        #endif
-        /* not computed yet and may not be computed at all */
-        st->bufsize = 0;
-        /* used to determine whether we should run set_frame and for unset assertions */
-        st->cur_frame = (unsigned) -1;
-        /* number of frames up to the last + 1 */
-        st->max_frames = get_frame_lower_boundary(st->initial_frames_count, (unsigned) st->text.len) + 1;
-        st->udata = NULL;
-        st->output_str = NULL;
-    }
-    {
-        size_t fields_data_sz = (st->text.len + st->field.len
-            #ifdef TGUY_FASTCLEAR
-                                 + st->empty_field_.len
-            #endif
-        );
-
-        /* allocates memory for text, field and optionally empty_field in one malloc call,
-         * memory layout: TTTTTffffffffffffEEEEEEEEEEEE, where T - text, f - field, E - empty field
-         * therefore address of field is address of text + text.len and so on. */
-        st->text.data = malloc(sizeof(*st->field.data) * fields_data_sz);
-        if (st->text.data == NULL) goto fail;
-        st->field.data = st->text.data + len;
-        st->field.data[0] = st->sprite_can;
-
-        #ifdef TGUY_FASTCLEAR
-        /* empty field has the same size as field, it's only filled with spaces and trash can sprite as first element */
-        st->empty_field_.data = st->field.data + st->field.len;
-        st->empty_field_.data[0] = st->sprite_can;
-        for (size_t i = 1, flen = st->empty_field_.len; i < flen; i++) {
-            st->empty_field_.data[i] = st->sprite_space;
-        }
-        #endif
-
-        for (size_t i = 0, slen = st->text.len; i < slen; i++) {
-            st->text.data[i] = arr[i];
-        }
-        /* no need to clear the field because set_frame will do it anyway */
-        /* calling print functions or get_arr at this point is undefined behavior */
-    }
-    return st;
-
-fail:
-    free(st);
-    return NULL;
+    return tguy_from_arr_ex_2(arr, len, spacing, sprite_space, sprite_can, sprite_right, sprite_left, 1);
 }
 
 TrashGuyState *tguy_from_arr(const TGStrView *arr, size_t len, unsigned spacing) {
@@ -207,11 +293,7 @@ TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacin
         cstrtstrv(&sv_sprite_can, sprite_can, sprite_can_len),
         cstrtstrv(&sv_sprite_right, sprite_right, sprite_right_len),
         cstrtstrv(&sv_sprite_left, sprite_left, sprite_left_len));
-    if (st == NULL) {
-        free(strarr);
-    } else {
-        st->udata = strarr;
-    }
+    free(strarr);
     return st;
 }
 
@@ -228,20 +310,18 @@ TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) 
  */
 void tguy_free(TrashGuyState *st) {
     if (st == NULL) return;
-    free(st->udata);
-    free(st->text.data);
     free(st->output_str);
     free(st);
 }
 
 /**
  * In order to properly set frame we need to know few things beforehand:
- *  -# element_index for \ref TrashGuyState::text[element_index] we're currently working on
+ *  -# element_index for TrashGuyState::text[element_index] we're currently working on
  *  -# number of frames per element
  *  -# first frame (boundary) involving the work on element with element_index
  *  -# sub frame (frame index)
  *  -# direction
- *  -# index within the field
+ *  -# index within the arena
  *
  *  All we know is desired frame and number of frames per first element.
  *  -# Because of the get_frame_lower_boundary() we know that initial frame of each element is computed as: \n
@@ -264,7 +344,7 @@ void tguy_free(TrashGuyState *st) {
  *
  *  -# we spend the same number of frames moving left/right, if <code> sub_frame < (total / 2) </code> -> right, else -> left
  *
- *  -# index i within the field is computed as <code> sub_frame % (total / 2) </code>
+ *  -# index i within the arena is computed as <code> sub_frame % (total / 2) </code>
  */
 void tguy_set_frame(TrashGuyState *st, unsigned frame) {
     /*         a                        b                              c       */
@@ -292,10 +372,10 @@ void tguy_set_frame(TrashGuyState *st, unsigned frame) {
         tguy_clear_field(st, element_index + !right);
 
         /* don't overwrite the trash can when placing the trash-guy */
-        st->field.data[i + 1] = (right) ? st->sprite_right : st->sprite_left;
+        st->arena.data[i + 1] = (right) ? st->sprite_right : st->sprite_left;
         /* Draw the element TrashGuy carries if we're not right near the trash can */
         if (!right && i != 0) {
-            st->field.data[i] = st->text.data[element_index];
+            st->arena.data[i] = st->text.data[element_index];
         }
     }
 }
@@ -303,8 +383,8 @@ void tguy_set_frame(TrashGuyState *st, unsigned frame) {
 size_t tguy_fprint(const TrashGuyState *st, FILE *fp) {
     assert(st->cur_frame != (unsigned) -1);
     size_t len = 0;
-    for (size_t i = 0, flen = st->field.len; i < flen; i++) {
-        TGStrView sv = st->field.data[i];
+    for (size_t i = 0, flen = st->arena.len; i < flen; i++) {
+        TGStrView sv = st->arena.data[i];
         len += fprintf(fp, "%.*s", (int) sv.len, sv.str);
     }
     return len;
@@ -315,8 +395,8 @@ size_t tguy_print(const TrashGuyState *st) { return tguy_fprint(st, stdout); }
 size_t tguy_sprint(const TrashGuyState *st, char *buf) {
     assert(st->cur_frame != (unsigned) -1);
     char *start = buf;
-    for (size_t i = 0, flen = st->field.len; i < flen; i++) {
-        TGStrView sv = st->field.data[i];
+    for (size_t i = 0, flen = st->arena.len; i < flen; i++) {
+        TGStrView sv = st->arena.data[i];
         for (size_t j = 0, slen = sv.len; j < slen; j++) {
             *buf++ = sv.str[j];
         }
@@ -327,19 +407,18 @@ size_t tguy_sprint(const TrashGuyState *st, char *buf) {
 
 const TGStrView *tguy_get_arr(const TrashGuyState *st, size_t *len) {
     assert(st->cur_frame != (unsigned) -1);
-    *len = st->field.len;
-    return st->field.data;
+    *len = st->arena.len;
+    return st->arena.data;
 }
 
 unsigned tguy_get_frames_count(const TrashGuyState *st) {
     return st->max_frames;
 }
 
-/** returns a or b */
 #define tg_max(a, b) ((a) > (b) ? (a) : (b))
 
 /**
- * If bsize is not set, then iterate over possible field layout and
+ * If bsize is not set, then iterate over possible arena layout and
  * compute bufsize enough to keep any frame plus nul terminator
  */
 size_t tguy_get_bsize(TrashGuyState *st) {
@@ -378,3 +457,4 @@ const char *tguy_get_string(TrashGuyState *st, size_t *len) {
     if (len != NULL) *len = plen;
     return st->output_str;
 }
+

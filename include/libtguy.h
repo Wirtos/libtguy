@@ -18,7 +18,7 @@
 /**MINOR*/
 #define TGUY_VER_MINOR 9
 /**PATCH*/
-#define TGUY_VER_PATCH 0
+#define TGUY_VER_PATCH 2
 
 /**@}*/
 
@@ -30,7 +30,7 @@ typedef struct {
     size_t len;      /**< Number of bytes string has excluding nul terminator */
 } TGStrView;
 
-/** @def TGSTR(str)
+/** @def TGSTRV(str)
  *  Creates TGStrView from compile-time string
  * @param  str constant string array or literal
  */
@@ -50,7 +50,24 @@ typedef struct TrashGuyState TrashGuyState;
  * @param sprite_can   Sprite to be used as trash can
  * @param sprite_right Sprite to be used when TrashGuy moves right
  * @param sprite_left  Sprite to be used when TrashGuy moves left
- * @return             \ref TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
+ * @param preserve_strings If set to false function won't make a copy of all strings in passed TGStrView
+ *  and will instead rely on caller to preserve those strings until tguy_free is called
+ * @return             TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
+ */
+LIBTGUY_EXPORT TrashGuyState *tguy_from_arr_ex_2(const TGStrView *arr, size_t len, unsigned spacing,
+    TGStrView *sprite_space, TGStrView *sprite_can, TGStrView *sprite_right, TGStrView *sprite_left,
+    int preserve_strings);
+
+/**
+ *  Creates new TrashGuysState from array of TGStrView. If pointer to sprite is NULL then function will use default one
+ * @param arr          Array of string containers, each one is a separate element for TrashGuy to dump to the bin
+ * @param len          Number of string containers
+ * @param spacing      Number of space sprites to be placed between the TrashGuy sprite and fist element initially
+ * @param sprite_space Sprite to be used as empty space
+ * @param sprite_can   Sprite to be used as trash can
+ * @param sprite_right Sprite to be used when TrashGuy moves right
+ * @param sprite_left  Sprite to be used when TrashGuy moves left
+ * @return             TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
  */
 LIBTGUY_EXPORT TrashGuyState *tguy_from_arr_ex(const TGStrView *arr, size_t len, unsigned spacing,
     TGStrView *sprite_space, TGStrView *sprite_can, TGStrView *sprite_right, TGStrView *sprite_left);
@@ -60,7 +77,7 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_arr_ex(const TGStrView *arr, size_t len,
  * @param arr          Array of string containers, each one is a separate element for TrashGuy to dump to the bin
  * @param len          Number of string containers
  * @param spacing      Number of space sprites to be placed between the TrashGuy sprite and fist element initially
- * @return             \ref TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
+ * @return             TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
  */
 LIBTGUY_EXPORT TrashGuyState *tguy_from_arr(const TGStrView *arr, size_t len, unsigned spacing);
 
@@ -86,33 +103,33 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, 
  * @param string       valid utf-8 string, each grapheme cluster is a separate element for TrashGuy to dump to the bin
  * @param len          Number of bytes string has, if -1, then strlen will be used
  * @param spacing      Number of space sprites to be placed between the TrashGuy sprite and fist element initially
- * @return             \ref TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
+ * @return             TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
  */
 LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing);
 
 /**
- *  Deallocates memory used by a \ref TrashGuyState, does nothing if pointer is NULL
- * @param st           Valid \ref TrashGuyState * or NULL
+ *  Deallocates memory used by a TrashGuyState, does nothing if pointer is NULL
+ * @param st           Valid TrashGuyState * or NULL
  */
 LIBTGUY_EXPORT void tguy_free(TrashGuyState *st);
 
 /**
- *  Sets the current frame for \ref TrashGuyState
- * @param st           Valid \ref TrashGuyState *
+ *  Sets the current frame for TrashGuyState
+ * @param st           Valid TrashGuyState *
  * @param frame        0 <= frame < tguy_get_frames_count()
  */
 LIBTGUY_EXPORT void tguy_set_frame(TrashGuyState *st, unsigned frame);
 
 /**
- *  Returns number of frames particular \ref TrashGuyState has
- * @param st           Valid \ref TrashGuyState
+ *  Returns number of frames particular TrashGuyState has
+ * @param st           Valid TrashGuyState
  * @return             Number of frames, >= 1
  */
 LIBTGUY_EXPORT unsigned tguy_get_frames_count(const TrashGuyState *st);
 
 /**
  *  Writes currently set TrashGuy frame to fp without newline
- * @param st           Valid \ref TrashGuyState with frame set
+ * @param st           Valid TrashGuyState with frame set
  * @param fp           Valid FILE
  * @return             Number of characters written
  */
@@ -120,14 +137,14 @@ LIBTGUY_EXPORT size_t tguy_fprint(const TrashGuyState *st, FILE *fp);
 
 /**
  *  Writes currently set TrashGuy frame to stdout without newline
- * @param st           Valid \ref TrashGuyState with frame set
+ * @param st           Valid TrashGuyState with frame set
  * @return             Number of characters written
  */
 LIBTGUY_EXPORT size_t tguy_print(const TrashGuyState *st);
 
 /**
  *  Writes currently set TrashGuy frame to buffer and appends nul terminator
- * @param st           Valid \ref TrashGuyState with frame set
+ * @param st           Valid TrashGuyState with frame set
  * @param buf          Buffer at least tguy_get_bsize() bytes large
  * @return             Number of characters written, excluding the nul terminator
  */
@@ -135,14 +152,14 @@ LIBTGUY_EXPORT size_t tguy_sprint(const TrashGuyState *st, char *buf);
 
 /**
  *  Get buffer size large enough to hold one frame including nul terminator
- * @param st           Valid \ref TrashGuyState
+ * @param st           Valid TrashGuyState
  * @return             Needed buffer size in bytes
  */
 LIBTGUY_EXPORT size_t tguy_get_bsize(TrashGuyState *st);
 
 /**
  *  Returns read-only array of TrashGuy frame
- * @param st           Valid \ref TrashGuyState with frame set
+ * @param st           Valid TrashGuyState with frame set
  * @param[out] len     Length of the returned array
  * @return             Array of const TGStrView
  */
@@ -150,7 +167,7 @@ LIBTGUY_EXPORT const TGStrView *tguy_get_arr(const TrashGuyState *st, size_t *le
 
 /**
  *  Return pointer to utf-8 encoded null terminated string containing current set frame
- * @param st          Valid \ref TrashGuyState with frame set
+ * @param st          Valid TrashGuyState with frame set
  * @param[out] len    Length of the returned string
  * @return
  */
