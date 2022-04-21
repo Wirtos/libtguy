@@ -111,10 +111,11 @@ if (EMSCRIPTEN)
     target_compile_definitions(${PROJECT_NAME}_wasm PRIVATE -DLIBTGUY_EXPORT=__attribute__\(\(used\)\))
     set(TGUY_WASM_BASE_NAME $<TARGET_FILE_PREFIX:${PROJECT_NAME}>$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>)
     set_target_properties(${PROJECT_NAME}_wasm PROPERTIES OUTPUT_NAME ${TGUY_WASM_BASE_NAME})
+    # cmake (or emscripten toolchain) is dumb and doesn't know executable can emit few files so install them manually
     install(FILES
-            ${CMAKE_CURRENT_BINARY_DIR}/${TGUY_WASM_BASE_NAME}.wasm
-            ${CMAKE_CURRENT_BINARY_DIR}/${TGUY_WASM_BASE_NAME}.js
-            DESTINATION ${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME})
+            "${CMAKE_CURRENT_BINARY_DIR}/${TGUY_WASM_BASE_NAME}.wasm"
+            "${CMAKE_CURRENT_BINARY_DIR}/${TGUY_WASM_BASE_NAME}.js"
+            DESTINATION "${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}")
 endif ()
 
 # install targets' resulting files
@@ -154,7 +155,7 @@ install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}ConfigVersion.cmake"
 if (TGUY_BUILD_DOCS)
     find_package(Doxygen REQUIRED)
 
-    set(DOXYGEN_OUTPUT_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/doxygen)
+    set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
     set(DOXYGEN_EXTRACT_STATIC YES)
     doxygen_add_docs(${PROJECT_NAME}_docs
             include src
