@@ -16,9 +16,9 @@
 /**MAJOR*/
 #define TGUY_VER_MAJOR 0
 /**MINOR*/
-#define TGUY_VER_MINOR 9
+#define TGUY_VER_MINOR 10
 /**PATCH*/
-#define TGUY_VER_PATCH 2
+#define TGUY_VER_PATCH 0
 
 /**@}*/
 
@@ -106,6 +106,37 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, 
  * @return             TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
  */
 LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing);
+
+/**
+ * todo: docs
+ * @param arr
+ * @param len
+ * @param spacing
+ * @param sprite_space
+ * @param sprite_space_len
+ * @param sprite_can
+ * @param sprite_can_len
+ * @param sprite_right
+ * @param sprite_right_len
+ * @param sprite_left
+ * @param sprite_left_len
+ * @return
+ */
+LIBTGUY_EXPORT TrashGuyState *tguy_from_cstr_arr_ex(const char *const *arr, size_t len, unsigned spacing,
+    const char *sprite_space, size_t sprite_space_len,
+    const char *sprite_can, size_t sprite_can_len,
+    const char *sprite_right, size_t sprite_right_len,
+    const char *sprite_left, size_t sprite_left_len);
+
+
+/**
+ * todo: docs
+ * @param arr
+ * @param len
+ * @param spacing
+ * @return
+ */
+LIBTGUY_EXPORT TrashGuyState *tguy_from_cstr_arr(const char *const *arr, size_t len, unsigned spacing);
 
 /**
  *  Deallocates memory used by a TrashGuyState, does nothing if pointer is NULL

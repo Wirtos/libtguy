@@ -92,14 +92,14 @@ static inline void tguy_clear_field(TrashGuyState *st, unsigned n_clear_elements
     unsigned items_offset = st->arena.len - st->text.len + n_clear_elements;
 #ifdef TGUY_FASTCLEAR
     memcpy(&st->arena.data[0], &st->empty_arena_.data[0],
-        items_offset * sizeof(*st->arena.data));
+        items_offset * sizeof(st->arena.data[0]));
 #else
     for (size_t i = 1; i < items_offset; i++) {
         st->arena.data[i] = st->sprite_space;
     }
 #endif
     memcpy(&st->arena.data[items_offset], &st->text.data[n_clear_elements],
-        sizeof(*st->arena.data) * (st->text.len - n_clear_elements));
+        sizeof(st->arena.data[0]) * (st->text.len - n_clear_elements));
 }
 
 static size_t strvarr_strlen(const TGStrView *arr, size_t len) {
@@ -142,7 +142,7 @@ TrashGuyState *tguy_from_arr_ex_2(const TGStrView *arr, size_t len, unsigned spa
     int preserve_strings) {
     struct TrashGuyState *st;
     size_t str_len = 0;
-    char *str_mem;
+    char *str_mem = NULL;
     const size_t
         arena_len = 2 + spacing + len, /* 2 additional places for can and tguy sprites */
         all_fields_len = (
@@ -276,14 +276,14 @@ TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacin
             flen++;
         }
     }
-    strarr = malloc(sizeof(*strarr) * flen);
+    strarr = malloc(sizeof(strarr[0]) * flen);
     if (strarr == NULL) return NULL;
     { /* fill the array with ranges of the string representing whole utf-8 grapheme clusters */
         size_t i = 0;
         int32_t read_bytes = 0;
         uint32_t start, end;
         while (utf8proc_iterate_graphemes((unsigned char *) string, &read_bytes, len, &start, &end)) {
-            strarr[i] = (TGStrView) {&string[start], end - start};
+            cstrtstrv(&strarr[i], &string[start], end - start);
             i++;
         }
     }
@@ -305,9 +305,37 @@ TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) 
         NULL, 0);
 }
 
-/**
- * Also deallocates udata
- */
+TrashGuyState *tguy_from_cstr_arr_ex(const char *const *arr, size_t len, unsigned spacing,
+    const char *sprite_space, size_t sprite_space_len,
+    const char *sprite_can, size_t sprite_can_len,
+    const char *sprite_right, size_t sprite_right_len,
+    const char *sprite_left, size_t sprite_left_len) {
+    TrashGuyState *st;
+    TGStrView sv_sprite_space, sv_sprite_can, sv_sprite_right, sv_sprite_left;
+    TGStrView *svarr = malloc(sizeof(svarr[0]) * len);
+
+    if (svarr == NULL) return NULL;
+    for (size_t i = 0; i < len; i++) {
+        cstrtstrv(&svarr[i], arr[i], -1);
+    }
+    st = tguy_from_arr_ex(svarr, len, spacing,
+        cstrtstrv(&sv_sprite_space, sprite_space, sprite_space_len),
+        cstrtstrv(&sv_sprite_can, sprite_can, sprite_can_len),
+        cstrtstrv(&sv_sprite_right, sprite_right, sprite_right_len),
+        cstrtstrv(&sv_sprite_left, sprite_left, sprite_left_len));
+    free(svarr);
+    return st;
+}
+
+TrashGuyState *tguy_from_cstr_arr(const char *const *arr, size_t len, unsigned spacing) {
+    return tguy_from_cstr_arr_ex(arr, len, spacing,
+        NULL, 0,
+        NULL, 0,
+        NULL, 0,
+        NULL, 0
+    );
+}
+
 void tguy_free(TrashGuyState *st) {
     if (st == NULL) return;
     free(st->output_str);
