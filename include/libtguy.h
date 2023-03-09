@@ -105,7 +105,7 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, 
  * @param spacing      Number of space sprites to be placed between the TrashGuy sprite and fist element initially
  * @return             TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
  */
-LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing);
+LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8(const char string[], size_t len, unsigned spacing);
 
 /**
  * todo: docs
@@ -122,7 +122,7 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8(const char *string, size_t len, uns
  * @param sprite_left_len
  * @return
  */
-LIBTGUY_EXPORT TrashGuyState *tguy_from_cstr_arr_ex(const char *const *arr, size_t len, unsigned spacing,
+LIBTGUY_EXPORT TrashGuyState *tguy_from_cstr_arr_ex(const char *const arr[], size_t len, unsigned spacing,
     const char *sprite_space, size_t sprite_space_len,
     const char *sprite_can, size_t sprite_can_len,
     const char *sprite_right, size_t sprite_right_len,
@@ -136,7 +136,7 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_cstr_arr_ex(const char *const *arr, size
  * @param spacing
  * @return
  */
-LIBTGUY_EXPORT TrashGuyState *tguy_from_cstr_arr(const char *const *arr, size_t len, unsigned spacing);
+LIBTGUY_EXPORT TrashGuyState *tguy_from_cstr_arr(const char *const arr[], size_t len, unsigned spacing);
 
 /**
  *  Deallocates memory used by a TrashGuyState, does nothing if pointer is NULL
@@ -179,7 +179,7 @@ LIBTGUY_EXPORT size_t tguy_print(const TrashGuyState *st);
  * @param buf          Buffer at least tguy_get_bsize() bytes large
  * @return             Number of characters written, excluding the nul terminator
  */
-LIBTGUY_EXPORT size_t tguy_sprint(const TrashGuyState *st, char *buf);
+LIBTGUY_EXPORT size_t tguy_sprint(const TrashGuyState *st, char buf[]);
 
 /**
  *  Get buffer size large enough to hold one frame including nul terminator

@@ -46,7 +46,7 @@ if (TGUY_USE_FASTCLEAR)
     target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_FASTCLEAR)
 endif ()
 
-find_package(UTF8Proc QUIET)
+find_package(UTF8Proc CONFIG QUIET)
 
 if (UTF8Proc_FOUND)
     target_link_libraries(${PROJECT_NAME} PRIVATE utf8proc)
@@ -57,7 +57,7 @@ else ()
     FetchContent_Declare(
             utf8proc
             GIT_REPOSITORY https://github.com/Wirtos/utf8proc
-            GIT_TAG 32e5982d7f03b53ba50a139f038ceaa357257202
+            GIT_TAG 7891a34766173c8be2b309165161bbdd301abfff
     )
 
     FetchContent_MakeAvailable(utf8proc)
