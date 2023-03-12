@@ -33,7 +33,7 @@ typedef struct {
  * @param len  str length or -1 if string is nul terminated
  * @return res or NULL if str is NULL
  */
-static TGStrView *cstrtstrv(TGStrView res[1], const char *str, size_t len) {
+static TGStrView *cstr2tgstrv(TGStrView *res, const char *str, size_t len) {
     if (str == NULL) {
         return NULL;
     } else {
@@ -102,7 +102,7 @@ static inline void tguy_clear_field(TrashGuyState *st, unsigned n_clear_elements
         sizeof(st->arena.data[0]) * (st->text.len - n_clear_elements));
 }
 
-static size_t strvarr_strlen(const TGStrView *arr, size_t len) {
+static size_t strvarr_strlen(const TGStrView arr[], size_t len) {
     size_t plen = 0;
     for (size_t i = 0; i < len; i++) {
         plen += arr[i].len;
@@ -110,7 +110,7 @@ static size_t strvarr_strlen(const TGStrView *arr, size_t len) {
     return plen;
 }
 
-static size_t strvarr_write(char *str_out, const TGStrView *arr, size_t len) {
+static size_t strvarr_write(char str_out[], const TGStrView arr[], size_t len) {
     size_t plen = 0;
     for (size_t i = 0; i < len; i++) {
         memcpy(&str_out[plen], arr[i].str, arr[i].len);
@@ -120,7 +120,7 @@ static size_t strvarr_write(char *str_out, const TGStrView *arr, size_t len) {
 }
 
 /* like strvarr_copy but uses str_mem as source for dst, it's assumed to be at least strvarr_strlen in size */
-static size_t strvarr_copy_src(TGStrView *dst, const TGStrView *src, size_t len, const char *str_mem) {
+static size_t strvarr_copy_src(TGStrView *dst, const TGStrView *src, size_t len, const char str_mem[]) {
     size_t si = 0;
     for (size_t i = 0; i < len; i++) {
         dst[i].len = src[i].len;
@@ -137,7 +137,7 @@ static void strvarr_copy(TGStrView *dst, const TGStrView *src, size_t len) {
     }
 }
 
-TrashGuyState *tguy_from_arr_ex_2(const TGStrView *arr, size_t len, unsigned spacing,
+TrashGuyState *tguy_from_arr_ex_2(const TGStrView arr[], size_t len, unsigned spacing,
     TGStrView *sprite_space, TGStrView *sprite_can, TGStrView *sprite_right, TGStrView *sprite_left,
     int preserve_strings) {
     struct TrashGuyState *st;
@@ -250,16 +250,16 @@ TrashGuyState *tguy_from_arr_ex_2(const TGStrView *arr, size_t len, unsigned spa
     return st;
 }
 
-TrashGuyState *tguy_from_arr_ex(const TGStrView *arr, size_t len, unsigned spacing,
+TrashGuyState *tguy_from_arr_ex(const TGStrView arr[], size_t len, unsigned spacing,
     TGStrView *sprite_space, TGStrView *sprite_can, TGStrView *sprite_right, TGStrView *sprite_left) {
     return tguy_from_arr_ex_2(arr, len, spacing, sprite_space, sprite_can, sprite_right, sprite_left, 1);
 }
 
-TrashGuyState *tguy_from_arr(const TGStrView *arr, size_t len, unsigned spacing) {
+TrashGuyState *tguy_from_arr(const TGStrView arr[], size_t len, unsigned spacing) {
     return tguy_from_arr_ex(arr, len, spacing, NULL, NULL, NULL, NULL);
 }
 
-TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacing,
+TrashGuyState *tguy_from_utf8_ex(const char string[], size_t len, unsigned spacing,
     const char *sprite_space, size_t sprite_space_len,
     const char *sprite_can, size_t sprite_can_len,
     const char *sprite_right, size_t sprite_right_len,
@@ -267,15 +267,9 @@ TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacin
     TrashGuyState *st;
     TGStrView *strarr;
     TGStrView sv_sprite_space, sv_sprite_can, sv_sprite_right, sv_sprite_left;
-    size_t flen = 0;
     len = (len == (size_t) -1) ? strlen(string) : len;
-    {
-        int32_t read_bytes = 0;
-        uint32_t start, end;
-        while (utf8proc_iterate_graphemes((unsigned char *) string, &read_bytes, len, &start, &end)) {
-            flen++;
-        }
-    }
+    size_t flen = utf8proc_graphemeslen(string, len);
+
     strarr = malloc(sizeof(strarr[0]) * flen);
     if (strarr == NULL) return NULL;
     { /* fill the array with ranges of the string representing whole utf-8 grapheme clusters */
@@ -283,21 +277,21 @@ TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacin
         int32_t read_bytes = 0;
         uint32_t start, end;
         while (utf8proc_iterate_graphemes((unsigned char *) string, &read_bytes, len, &start, &end)) {
-            cstrtstrv(&strarr[i], &string[start], end - start);
+            cstr2tgstrv(&strarr[i], &string[start], end - start);
             i++;
         }
     }
 
     st = tguy_from_arr_ex(strarr, flen, spacing,
-        cstrtstrv(&sv_sprite_space, sprite_space, sprite_space_len),
-        cstrtstrv(&sv_sprite_can, sprite_can, sprite_can_len),
-        cstrtstrv(&sv_sprite_right, sprite_right, sprite_right_len),
-        cstrtstrv(&sv_sprite_left, sprite_left, sprite_left_len));
+        cstr2tgstrv(&sv_sprite_space, sprite_space, sprite_space_len),
+        cstr2tgstrv(&sv_sprite_can, sprite_can, sprite_can_len),
+        cstr2tgstrv(&sv_sprite_right, sprite_right, sprite_right_len),
+        cstr2tgstrv(&sv_sprite_left, sprite_left, sprite_left_len));
     free(strarr);
     return st;
 }
 
-TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) {
+TrashGuyState *tguy_from_utf8(const char string[], size_t len, unsigned spacing) {
     return tguy_from_utf8_ex(string, len, spacing,
         NULL, 0,
         NULL, 0,
@@ -305,7 +299,7 @@ TrashGuyState *tguy_from_utf8(const char *string, size_t len, unsigned spacing) 
         NULL, 0);
 }
 
-TrashGuyState *tguy_from_cstr_arr_ex(const char *const *arr, size_t len, unsigned spacing,
+TrashGuyState *tguy_from_cstr_arr_ex(const char *const arr[], size_t len, unsigned spacing,
     const char *sprite_space, size_t sprite_space_len,
     const char *sprite_can, size_t sprite_can_len,
     const char *sprite_right, size_t sprite_right_len,
@@ -316,18 +310,18 @@ TrashGuyState *tguy_from_cstr_arr_ex(const char *const *arr, size_t len, unsigne
 
     if (svarr == NULL) return NULL;
     for (size_t i = 0; i < len; i++) {
-        cstrtstrv(&svarr[i], arr[i], -1);
+        cstr2tgstrv(&svarr[i], arr[i], -1);
     }
     st = tguy_from_arr_ex(svarr, len, spacing,
-        cstrtstrv(&sv_sprite_space, sprite_space, sprite_space_len),
-        cstrtstrv(&sv_sprite_can, sprite_can, sprite_can_len),
-        cstrtstrv(&sv_sprite_right, sprite_right, sprite_right_len),
-        cstrtstrv(&sv_sprite_left, sprite_left, sprite_left_len));
+        cstr2tgstrv(&sv_sprite_space, sprite_space, sprite_space_len),
+        cstr2tgstrv(&sv_sprite_can, sprite_can, sprite_can_len),
+        cstr2tgstrv(&sv_sprite_right, sprite_right, sprite_right_len),
+        cstr2tgstrv(&sv_sprite_left, sprite_left, sprite_left_len));
     free(svarr);
     return st;
 }
 
-TrashGuyState *tguy_from_cstr_arr(const char *const *arr, size_t len, unsigned spacing) {
+TrashGuyState *tguy_from_cstr_arr(const char *const arr[], size_t len, unsigned spacing) {
     return tguy_from_cstr_arr_ex(arr, len, spacing,
         NULL, 0,
         NULL, 0,
