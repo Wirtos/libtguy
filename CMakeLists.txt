@@ -104,9 +104,13 @@ if (EMSCRIPTEN)
     target_link_libraries(${PROJECT_NAME}_wasm PRIVATE $<TARGET_PROPERTY:${PROJECT_NAME},LINK_LIBRARIES>)
     target_include_directories(${PROJECT_NAME}_wasm PRIVATE $<TARGET_PROPERTY:${PROJECT_NAME},INCLUDE_DIRECTORIES>)
     target_link_options(${PROJECT_NAME}_wasm PRIVATE
-            --closure=1
-            -sEXPORTED_RUNTIME_METHODS=[cwrap,allocateUTF8,UTF8ToString]
-            -sEXPORTED_FUNCTIONS=[_malloc,_free])
+            --closure=$<IF:$<CONFIG:Debug>,0,1>
+            -sEXPORTED_RUNTIME_METHODS=[cwrap,lengthBytesUTF8,stringToUTF8]
+            -sEXPORTED_FUNCTIONS=[_malloc,_free]
+            -sMODULARIZE=1
+            --extern-post-js "${CMAKE_CURRENT_SOURCE_DIR}/bindings/libtguy.js"
+            -sEXPORT_NAME=TGuyModule
+            -sCLOSURE_WARNINGS=warn)
     # cmake emits EXPORT as __attribute__((default)), which doesn't actually keep the function alive in emscripten
     target_compile_definitions(${PROJECT_NAME}_wasm PRIVATE -DLIBTGUY_EXPORT=__attribute__\(\(used\)\))
     set(TGUY_WASM_BASE_NAME $<TARGET_FILE_PREFIX:${PROJECT_NAME}>$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>)
