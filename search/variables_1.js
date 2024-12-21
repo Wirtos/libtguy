@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['bufsize_69',['bufsize',['../structTrashGuyState.html#a39d80355248426da436fd90a7116ee5f',1,'TrashGuyState']]]
+  ['buf_5fsize_0',['buf_size',['../structTrashGuyState.html#a8be4e148903e2637202d235ba2ebd787',1,'TrashGuyState']]]
 ];
