@@ -162,14 +162,14 @@ LIBTGUY_EXPORT unsigned tguy_get_frames_count(const TrashGuyState *st);
  *  Writes currently set TrashGuy frame to fp without newline
  * @param st           Valid TrashGuyState with frame set
  * @param fp           Valid FILE
- * @return             Number of characters written
+ * @return             Number of bytes written
  */
 LIBTGUY_EXPORT size_t tguy_fprint(const TrashGuyState *st, FILE *fp);
 
 /**
  *  Writes currently set TrashGuy frame to stdout without newline
  * @param st           Valid TrashGuyState with frame set
- * @return             Number of characters written
+ * @return             Number of bytes written
  */
 LIBTGUY_EXPORT size_t tguy_print(const TrashGuyState *st);
 
@@ -177,31 +177,31 @@ LIBTGUY_EXPORT size_t tguy_print(const TrashGuyState *st);
  *  Writes currently set TrashGuy frame to buffer and appends nul terminator
  * @param st           Valid TrashGuyState with frame set
  * @param buf          Buffer at least tguy_get_bsize() bytes large
- * @return             Number of characters written, excluding the nul terminator
+ * @return             Number of bytes written, excluding the nul terminator
  */
 LIBTGUY_EXPORT size_t tguy_sprint(const TrashGuyState *st, char buf[]);
 
 /**
  *  Get buffer size large enough to hold one frame including nul terminator
  * @param st           Valid TrashGuyState
- * @return             Needed buffer size in bytes
+ * @return             Needed buffer size in bytes, including nul terminator
  */
 LIBTGUY_EXPORT size_t tguy_get_bsize(TrashGuyState *st);
 
 /**
  *  Returns read-only array of TrashGuy frame
  * @param st           Valid TrashGuyState with frame set
- * @param[out] len     Length of the returned array
- * @return             Array of const TGStrView
+ * @param[out,optional] len     Length of the returned array, excluding nul terminator
+ * @return             Array of const TGStrView, nul terminated with TGStrView.str == NULL
  */
 LIBTGUY_EXPORT const TGStrView *tguy_get_arr(const TrashGuyState *st, size_t *len);
 
 /**
  *  Return pointer to utf-8 encoded null terminated string containing current set frame
  * @param st          Valid TrashGuyState with frame set
- * @param[out] len    Length of the returned string
+ * @param[out,optional] len    Length of the returned string in bytes
  * @return
  */
-LIBTGUY_EXPORT const char *tguy_get_string(TrashGuyState *st, size_t *len);
+LIBTGUY_EXPORT const char *tguy_get_string(TrashGuyState * restrict st, size_t *len);
 
 #endif /* LIBTGUY_H */
