@@ -5,7 +5,7 @@
 <meta http-equiv="X-UA-Compatible" content="IE=11"/>
 <meta name="generator" content="Doxygen 1.9.8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>libtguy: src/libtguy.c File Reference</title>
+<title>tguy: src/libtguy.c File Reference</title>
 <link href="tabs.css" rel="stylesheet" type="text/css"/>
 <script type="text/javascript" src="jquery.js"></script>
 <script type="text/javascript" src="dynsections.js"></script>
@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">libtguy<span id="projectnumber">&#160;0.10.1</span>
+   <div id="projectname">tguy<span id="projectnumber">&#160;0.12.0</span>
    </div>
    <div id="projectbrief">TrashGuy C library created to be easily usable from other languages with CFFI support.</div>
   </td>
@@ -86,7 +86,7 @@ $(function() {
 <code>#include &lt;assert.h&gt;</code><br />
 <code>#include &lt;string.h&gt;</code><br />
 <code>#include &lt;stdlib.h&gt;</code><br />
-<code>#include &lt;utf8proc.h&gt;</code><br />
+<code>#include &lt;limits.h&gt;</code><br />
 </div><table class="memberdecls">
 <tr class="heading"><td colspan="2"><h2 class="groupheader"><a id="nested-classes" name="nested-classes"></a>
 Classes</h2></td></tr>
@@ -133,6 +133,12 @@ static void&#160;</td><td class="memItemRight" valign="bottom"><b>strvarr_copy</
 <tr class="memitem:a4a4c3585e8a91e1cefe2a43b0acfc1f5" id="r_a4a4c3585e8a91e1cefe2a43b0acfc1f5"><td class="memItemLeft" align="right" valign="top"><a id="a4a4c3585e8a91e1cefe2a43b0acfc1f5" name="a4a4c3585e8a91e1cefe2a43b0acfc1f5"></a>
 <a class="el" href="structTrashGuyState.html">TrashGuyState</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>tguy_from_arr</b> (const <a class="el" href="structTGStrView.html">TGStrView</a> arr[], size_t len, unsigned spacing)</td></tr>
 <tr class="separator:a4a4c3585e8a91e1cefe2a43b0acfc1f5"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:ae98f45ab47b44f0031901eaa1b5f0f6a" id="r_ae98f45ab47b44f0031901eaa1b5f0f6a"><td class="memItemLeft" align="right" valign="top"><a id="ae98f45ab47b44f0031901eaa1b5f0f6a" name="ae98f45ab47b44f0031901eaa1b5f0f6a"></a>
+static char *&#160;</td><td class="memItemRight" valign="bottom"><b>tguy_utf8_next</b> (const char *begin, const char *end)</td></tr>
+<tr class="separator:ae98f45ab47b44f0031901eaa1b5f0f6a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a163f575d94d5422e9250f3ad88f3e2f6" id="r_a163f575d94d5422e9250f3ad88f3e2f6"><td class="memItemLeft" align="right" valign="top"><a id="a163f575d94d5422e9250f3ad88f3e2f6" name="a163f575d94d5422e9250f3ad88f3e2f6"></a>
+static size_t&#160;</td><td class="memItemRight" valign="bottom"><b>tguy_codepoints_len</b> (const char *string, size_t len)</td></tr>
+<tr class="separator:a163f575d94d5422e9250f3ad88f3e2f6"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a93b0b9ad0918a4c2c0df11c65e217054" id="r_a93b0b9ad0918a4c2c0df11c65e217054"><td class="memItemLeft" align="right" valign="top"><a id="a93b0b9ad0918a4c2c0df11c65e217054" name="a93b0b9ad0918a4c2c0df11c65e217054"></a>
 <a class="el" href="structTrashGuyState.html">TrashGuyState</a> *&#160;</td><td class="memItemRight" valign="bottom"><b>tguy_from_utf8_ex</b> (const char string[], size_t len, unsigned spacing, const char *sprite_space, size_t sprite_space_len, const char *sprite_can, size_t sprite_can_len, const char *sprite_right, size_t sprite_right_len, const char *sprite_left, size_t sprite_left_len)</td></tr>
 <tr class="separator:a93b0b9ad0918a4c2c0df11c65e217054"><td class="memSeparator" colspan="2">&#160;</td></tr>
