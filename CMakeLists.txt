@@ -11,7 +11,7 @@ get_version_from_macro(
         OUTPUT TGUY_VERSION)
 
 set(PACKAGE_NAME TGuy)
-project(libtguy
+project(tguy
         LANGUAGES C
         VERSION "${TGUY_VERSION}"
         DESCRIPTION "TrashGuy C library created to be easily usable from other languages with CFFI support.")
@@ -22,10 +22,10 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 option(BUILD_SHARED_LIBS "Whether to build a dynamic library" OFF)
 option(TGUY_USE_FASTCLEAR "Whether to double space usage to increase speed" ON)
+option(TGUY_USE_UTF8PROC "Whether to use utf8proc library for full unicode support" ON)
 option(TGUY_BUILD_DOCS "Whether to build doxygen docs" OFF)
 
 message(STATUS "libtguy ${TGUY_VERSION}")
-
 
 add_library(${PROJECT_NAME} src/libtguy.c)
 add_library(${PACKAGE_NAME}::TGuy ALIAS ${PROJECT_NAME})
@@ -34,12 +34,12 @@ if ("${CMAKE_C_COMPILER_ID}" MATCHES "MSVC" OR "${CMAKE_C_SIMULATE_ID}" MATCHES 
     target_compile_options(${PROJECT_NAME}
             PRIVATE
             $<$<CONFIG:Release>:-fp:fast> -W4
-            )
+    )
 elseif ("${CMAKE_C_COMPILER_ID}" MATCHES "GNU|Intel|Clang" OR "${CMAKE_C_SIMULATE_ID}" MATCHES "GNU")
     target_compile_options(${PROJECT_NAME}
             PRIVATE
             $<$<CONFIG:Release>:-fno-math-errno> $<$<C_COMPILER_ID:GNU,Clang>:-pedantic-errors> -Wall -Wextra -Werror
-            )
+    )
 endif ()
 
 if (TGUY_USE_FASTCLEAR)
@@ -48,23 +48,26 @@ endif ()
 
 find_package(UTF8Proc CONFIG QUIET)
 
-if (UTF8Proc_FOUND)
-    target_link_libraries(${PROJECT_NAME} PRIVATE utf8proc)
-else ()
-    include(FetchContent)
-    message(STATUS "UTF8Proc not found, embedding git version...")
+if (TGUY_USE_UTF8PROC)
+    if (UTF8Proc_FOUND)
+        target_link_libraries(${PROJECT_NAME} PRIVATE utf8proc)
+    else ()
+        include(FetchContent)
+        message(STATUS "UTF8Proc not found, embedding git version...")
 
-    FetchContent_Declare(
-            utf8proc
-            GIT_REPOSITORY https://github.com/Wirtos/utf8proc
-            GIT_TAG 7891a34766173c8be2b309165161bbdd301abfff
-    )
-
-    FetchContent_MakeAvailable(utf8proc)
-
-    # requires cmake 3.15
-    target_sources(${PROJECT_NAME} PRIVATE $<TARGET_OBJECTS:utf8proc>)
-    target_include_directories(${PROJECT_NAME} PRIVATE $<TARGET_PROPERTY:utf8proc,INTERFACE_INCLUDE_DIRECTORIES>)
+        FetchContent_Declare(
+                utf8proc
+                GIT_REPOSITORY https://github.com/JuliaStrings/utf8proc
+                GIT_TAG b2f72ca9dcb075c33e2591067bd6b029e4ebc4e1
+        )
+        set(BUILD_SHARED_LIBS OFF CACHE BOOL "" FORCE)
+        FetchContent_MakeAvailable(utf8proc)
+        unset(BUILD_SHARED_LIBS CACHE)
+        # requires cmake 3.15
+        target_sources(${PROJECT_NAME} PRIVATE $<TARGET_OBJECTS:utf8proc>)
+        target_include_directories(${PROJECT_NAME} PRIVATE $<TARGET_PROPERTY:utf8proc,INTERFACE_INCLUDE_DIRECTORIES>)
+    endif ()
+    target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_USE_UTF8PROC)
 endif ()
 
 include(CheckLibraryExists)
@@ -74,7 +77,7 @@ if (LIBM_EXISTS)
 endif ()
 
 include(GenerateExportHeader)
-generate_export_header(${PROJECT_NAME})
+generate_export_header(${PROJECT_NAME} EXPORT_FILE_NAME "libtguy_export.h" BASE_NAME "LIBTGUY")
 
 include(GNUInstallDirs)
 
@@ -83,19 +86,20 @@ target_include_directories(${PROJECT_NAME} PUBLIC
 
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>"
         "$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>"
-        )
+)
 
 # export tguy target as TGuy
 # declare headers to be installed
 set_property(TARGET ${PROJECT_NAME}
         PROPERTY PUBLIC_HEADER
         include/libtguy.h
-        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}_export.h"
-        )
+        "${CMAKE_CURRENT_BINARY_DIR}/libtguy_export.h"
+)
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
         EXPORT_NAME TGuy
-        PREFIX ""
-        )
+        PREFIX "lib"
+)
 
 if (EMSCRIPTEN)
     # this is ugly but emscripten toolchain is dumb and doesn't have an option to build library target as wasm
@@ -104,13 +108,13 @@ if (EMSCRIPTEN)
     target_link_libraries(${PROJECT_NAME}_wasm PRIVATE $<TARGET_PROPERTY:${PROJECT_NAME},LINK_LIBRARIES>)
     target_include_directories(${PROJECT_NAME}_wasm PRIVATE $<TARGET_PROPERTY:${PROJECT_NAME},INCLUDE_DIRECTORIES>)
     target_link_options(${PROJECT_NAME}_wasm PRIVATE
+            -Wclosure
             --closure=$<IF:$<CONFIG:Debug>,0,1>
             -sEXPORTED_RUNTIME_METHODS=[cwrap,lengthBytesUTF8,stringToUTF8]
             -sEXPORTED_FUNCTIONS=[_malloc,_free]
             -sMODULARIZE=1
             --extern-post-js "${CMAKE_CURRENT_SOURCE_DIR}/bindings/libtguy.js"
-            -sEXPORT_NAME=TGuyModule
-            -sCLOSURE_WARNINGS=warn)
+            -sEXPORT_NAME=TGuyModule)
     # cmake emits EXPORT as __attribute__((default)), which doesn't actually keep the function alive in emscripten
     target_compile_definitions(${PROJECT_NAME}_wasm PRIVATE -DLIBTGUY_EXPORT=__attribute__\(\(used\)\))
     set(TGUY_WASM_BASE_NAME $<TARGET_FILE_PREFIX:${PROJECT_NAME}>$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>)
@@ -124,36 +128,46 @@ endif ()
 
 # install targets' resulting files
 install(TARGETS ${PROJECT_NAME}
-        EXPORT ${PACKAGE_NAME}Config
+        EXPORT ${PACKAGE_NAME}Targets
         COMPONENT TGuy
         RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}/${PROJECT_NAME}"
         LIBRARY DESTINATION "${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}"
         ARCHIVE DESTINATION "${CMAKE_INSTALL_LIBDIR}/${PROJECT_NAME}"
         PUBLIC_HEADER DESTINATION "${CMAKE_INSTALL_INCLUDEDIR}/${PROJECT_NAME}"
-        )
+)
 
 # write export config into binary dir in order to find is as an external project without installing
-export(EXPORT ${PACKAGE_NAME}Config
+export(EXPORT ${PACKAGE_NAME}Targets
         NAMESPACE ${PACKAGE_NAME}::
-        FILE "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
-        )
+        FILE "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Targets.cmake"
+)
 
 # install export configs into install dir to find it in a project setting ${PROJECT_NAME}_DIR variable to datadir/cmake
-install(EXPORT ${PACKAGE_NAME}Config
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake"
+install(EXPORT ${PACKAGE_NAME}Targets
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
         NAMESPACE ${PACKAGE_NAME}::
-        )
+)
 
 # write version config file into binary dir in order to find is as a subdirectory project
 include(CMakePackageConfigHelpers)
 write_basic_package_version_file("${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}ConfigVersion.cmake"
         VERSION "${PROJECT_VERSION}"
         COMPATIBILITY SameMinorVersion
-        )
+)
+
+# Generate main config file
+configure_package_config_file(
+        "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PACKAGE_NAME}Config.cmake.in"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
+        INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
+)
 
 # install version config file into datadir/cmake
-install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}ConfigVersion.cmake"
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake")
+install(FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}ConfigVersion.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
+)
 
 
 if (TGUY_BUILD_DOCS)
@@ -165,7 +179,7 @@ if (TGUY_BUILD_DOCS)
             include src
 
             ALL
-            )
+    )
     install(DIRECTORY "${DOXYGEN_OUTPUT_DIRECTORY}" DESTINATION "${CMAKE_INSTALL_DOCDIR}/${PROJECT_NAME}")
 endif ()
 

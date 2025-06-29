@@ -4,7 +4,10 @@
 #include <assert.h>
 #include <string.h>
 #include <stdlib.h>
+#include <limits.h>
+#ifdef TGUY_USE_UTF8PROC
 #include <utf8proc.h>
+#endif
 
 #define ignored_ (void)
 
@@ -145,7 +148,7 @@ TrashGuyState *tguy_from_arr_ex_2(const TGStrView arr[],
     size_t str_len = 0;
     char *str_mem = NULL;
     const size_t
-        arena_size = 2 + spacing + len + 1, /* 3 additional places for can, tguy sprite and nul */
+        arena_size = 2 + spacing + len + 1, /* 3 additional places for: can, tguy sprite and nul */
         all_fields_len = (
             len
             + arena_size
@@ -200,7 +203,7 @@ TrashGuyState *tguy_from_arr_ex_2(const TGStrView arr[],
     if (preserve_strings) {
         /* copy strings from views to allocated linear memory block, then assign new addresses to views */
         char *str_base;
-        str_mem = (char*)st + str_mem_off;
+        str_mem = (char *)st + str_mem_off;
         str_base = str_mem;
         str_mem += strvarr_write(str_mem, arr, len);
 
@@ -268,28 +271,116 @@ TrashGuyState *tguy_from_arr(const TGStrView arr[], size_t len, unsigned spacing
     return tguy_from_arr_ex(arr, len, spacing, NULL, NULL, NULL, NULL);
 }
 
+#ifdef TGUY_USE_UTF8PROC
+
+static size_t tguy_iterate_graphemes(
+    const utf8proc_uint8_t *str, utf8proc_ssize_t *read_bytes, utf8proc_ssize_t strlen,
+    utf8proc_uint32_t *start, utf8proc_uint32_t *end
+) {
+    utf8proc_int32_t break_state = 0, codepoint, prev_codepoint = 0;
+    if (*read_bytes == strlen)
+        return 0;
+    *start = *read_bytes;
+    while (1) {
+        utf8proc_ssize_t n = utf8proc_iterate(str + *read_bytes, strlen - *read_bytes, &codepoint);
+        if (*read_bytes == strlen) {
+            codepoint = 0;  // Final dummy codepoint
+        } else if (codepoint == -1) {
+            return n;
+        }
+        *read_bytes = *read_bytes + n;
+        if (prev_codepoint != 0 && utf8proc_grapheme_break_stateful(prev_codepoint, codepoint, &break_state)) {
+            *read_bytes = *read_bytes - n;
+            *end = *read_bytes;  // The last byte (not inclusive) of this grapheme
+            return 1;
+            }
+        prev_codepoint = codepoint;
+    }
+    // Unreachable
+}
+
+#else
+
+static char *tguy_utf8_next(const char *begin, const char *end) {
+    if (begin == end) {
+        return NULL;
+    }
+
+    if ((*begin & 0x80) == 0x0) {
+        begin += 1;
+    } else if ((*begin & 0xE0) == 0xC0) {
+        begin += 2;
+    } else if ((*begin & 0xF0) == 0xE0) {
+        begin += 3;
+    } else if ((*begin & 0xF8) == 0xF0) {
+        begin += 4;
+    }
+
+    return (char *) begin;
+}
+
+#endif
+#ifdef TGUY_USE_UTF8PROC
+static size_t tguy_graphemes_len(const char *string, size_t len) {
+    utf8proc_ssize_t read_bytes = 0;
+    utf8proc_uint32_t start, end;
+    size_t rlen = 0;
+    while (tguy_iterate_graphemes((unsigned char *) string, &read_bytes, (utf8proc_ssize_t)len, &start, &end)) {
+        rlen++;
+    }
+    return rlen;
+#else
+
+static size_t tguy_codepoints_len(const char *string, size_t len) {
+    size_t rlen = 0;
+    const char *start = string, *end = string + len;
+    while ((start = tguy_utf8_next(start, end))) {
+        rlen++;
+    }
+    return rlen;
+}
+#endif
+
+
 TrashGuyState *tguy_from_utf8_ex(const char string[], size_t len, unsigned spacing,
                                  const char *sprite_space, size_t sprite_space_len,
                                  const char *sprite_can, size_t sprite_can_len,
                                  const char *sprite_right, size_t sprite_right_len,
                                  const char *sprite_left, size_t sprite_left_len) {
     TrashGuyState *st;
-    TGStrView *strarr;
+    TGStrView *strarr = NULL;
     TGStrView sv_sprite_space, sv_sprite_can, sv_sprite_right, sv_sprite_left;
     len = (len == (size_t)-1) ? strlen(string) : len;
-    size_t flen = utf8proc_graphemeslen(string, len);
 
-    strarr = malloc(sizeof(strarr[0]) * flen);
-    if (strarr == NULL) return NULL;
-    {
-        /* fill the array with ranges of the string representing whole utf-8 grapheme clusters */
+    /* Sanity check the len */
+    if (len > INT_MAX) return NULL;
+
+#ifdef TGUY_USE_UTF8PROC
+    size_t flen = tguy_graphemes_len(string, len);
+#else
+    size_t flen = tguy_codepoints_len(string, len);
+#endif
+    if (flen > INT_MAX) return NULL;
+
+    if (flen) {
+        strarr = malloc(sizeof(strarr[0]) * flen);
+        if (strarr == NULL) return NULL;
+
         size_t i = 0;
-        int32_t read_bytes = 0;
+#ifdef TGUY_USE_UTF8PROC
+        /* fill the array with ranges of the string representing whole utf-8 grapheme clusters */
+        utf8proc_ssize_t read_bytes = 0;
         uint32_t start, end;
-        while (utf8proc_iterate_graphemes((unsigned char*)string, &read_bytes, len, &start, &end)) {
-            cstr2tgstrv(&strarr[i], &string[start], end - start);
-            i++;
+        while (tguy_iterate_graphemes((unsigned char *)string, &read_bytes, len, &start, &end)) {
+            cstr2tgstrv(&strarr[i++], &string[start], end - start);
         }
+#else
+        const char *start = string, *end = string + len;
+        while ((start = tguy_utf8_next(start, end))) {
+            cstr2tgstrv(&strarr[i++], string, start - string);
+            string = start;
+        }
+#endif
     }
 
     st = tguy_from_arr_ex(strarr, flen, spacing,
