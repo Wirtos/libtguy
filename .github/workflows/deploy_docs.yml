@@ -30,7 +30,7 @@ jobs:
 
     - name: Build doxygen docs
       # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target libtguy_docs
+      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target tguy_docs
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
