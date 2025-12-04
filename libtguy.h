@@ -7,7 +7,6 @@
 
 #include <stddef.h>
 #include <stdio.h>
-#include "libtguy_export.h"
 
 /** @defgroup VERSION Version macros
  * Printable format: "%d.%d.%d", MAJOR, MINOR, PATCH
@@ -16,11 +15,32 @@
 /**MAJOR*/
 #define TGUY_VER_MAJOR 0
 /**MINOR*/
-#define TGUY_VER_MINOR 12
+#define TGUY_VER_MINOR 13
 /**PATCH*/
 #define TGUY_VER_PATCH 0
 
 /**@}*/
+
+#ifdef LIBTGUY_STATIC_DEFINE
+    #ifndef LIBTGUY_EXPORT
+        #define LIBTGUY_EXPORT
+    #endif
+#else
+    #ifndef LIBTGUY_EXPORT
+        #if defined _WIN32 || defined __CYGWIN__
+            #ifdef LIBTGUY_EXPORTS
+                #define LIBTGUY_EXPORT __declspec(dllexport)
+            #else
+                #define LIBTGUY_EXPORT __declspec(dllimport)
+            #endif
+        #elif __GNUC__ >= 4
+            #define LIBTGUY_EXPORT __attribute__((visibility("default")))
+        #else
+            #define LIBTGUY_EXPORT
+        #endif
+    #endif
+#endif
+
 
 /** @struct TGStrView
  *  String container

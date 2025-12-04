@@ -329,6 +329,7 @@ static size_t tguy_graphemes_len(const char *string, size_t len) {
         rlen++;
     }
     return rlen;
+}
 #else
 
 static size_t tguy_codepoints_len(const char *string, size_t len) {
