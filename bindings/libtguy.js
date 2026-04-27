@@ -1,129 +1,167 @@
-function TGuyModuleInit(Module) {
-    return new Promise((resolve) => {
-        TGuyModule(Module).then(
-            (Module) => {
-                const cwrap = Module['cwrap'];
+(function () {
+    const cwrap = Module['cwrap'];
 
-                class TGuy {
-                    static tguy_from_utf8_ex = cwrap('tguy_from_utf8_ex',
-                        'number', ['string', 'number', 'number', 'string', 'number',
-                            'string', 'number', 'string', 'number', 'string', 'number']);
-                    static tguy_from_cstr_arr_ex = cwrap('tguy_from_cstr_arr_ex',
-                        'number', ['number', 'number', 'number', 'string', 'number',
-                            'string', 'number', 'string', 'number', 'string', 'number']);
-                    static tguy_set_frame = cwrap('tguy_set_frame', null, ['number', 'number']);
-                    static tguy_get_string = cwrap('tguy_get_string', 'string', ['number', 'number']);
-                    static tguy_free = cwrap('tguy_free', null, ['number']);
-                    static tguy_get_frames_count = cwrap('tguy_get_frames_count', 'number', ['number']);
+    const tguy_from_utf8_ex = cwrap('tguy_from_utf8_ex',
+        'number', ['string', 'number', 'number', 'string', 'number',
+            'string', 'number', 'string', 'number', 'string', 'number']);
+    const tguy_from_cstr_arr_ex = cwrap('tguy_from_cstr_arr_ex',
+        'number', ['number', 'number', 'number', 'string', 'number',
+            'string', 'number', 'string', 'number', 'string', 'number']);
+    const tguy_set_frame = cwrap('tguy_set_frame', null, ['number', 'number']);
+    const tguy_get_string = cwrap('tguy_get_string', 'string', ['number', 'number']);
+    const tguy_free = cwrap('tguy_free', null, ['number']);
+    const tguy_get_frames_count = cwrap('tguy_get_frames_count', 'number', ['number']);
+    const lengthBytesUTF8 = Module['lengthBytesUTF8'];
+    const stringToUTF8 = Module['stringToUTF8'];
+    const malloc = Module['_malloc'];
+    const free = Module['_free'];
+    const setValue = Module['setValue'];
+    const PTR_SIZE = Module['POINTER_SIZE'];
 
-                    /**
-                     * @param {(string|string[])} text
-                     * @param {number} spacing
-                     * @param {?string} space
-                     * @param {?string} can
-                     * @param {?string} right
-                     * @param {?string} left
-                     */
-                    constructor(text, spacing, space, can, right, left) {
-                        this.text = text;
-                        let tguy_constructor;
-                        let len;
-                        if (Array.isArray(text)) {
-                            if (!text.every(s => typeof (s) === "string")) {
-                                throw TypeError("text must only contain strings");
-                            }
-                            const str_off = Module.HEAPU32.BYTES_PER_ELEMENT * text.length;
-                            const size = str_off + text.reduce((acc, val) => acc + Module.lengthBytesUTF8(val) + 1, 0);
-                            let arr_mem = Module._malloc(size);
+    class TGuy {
+        /**
+         * @param {(string|Array<string>)} text
+         * @param {number} spacing
+         * @param {?string} space
+         * @param {?string} can
+         * @param {?string} right
+         * @param {?string} left
+         */
+        constructor(text, spacing = 4, space = null, can= null, right = null, left = null) {
+            /** @type {(string|Array<string>)} */
+            this.text = text;
+            /** @type {number|null} */
+            this.tgobj = null;
+            /** @type {number} */
+            this.nframes = 0;
+            /** @type {number} */
+            this.frame = 0;
+            /** @type {function((string|number),number,number,string?,number,string?,number,string?,number,string?,number)}*/
+            let tguy_constructor;
+            /** @type {number} */
+            let len;
 
-                            let arr = Module.HEAPU32.subarray((arr_mem >> 2), (arr_mem + str_off) >> 2);
-                            let str_mem = arr_mem + str_off;
-                            text.forEach((val, i) => {
-                                arr[i] = str_mem;
-                                /* skip written string + terminator */
-                                str_mem += 1 + Module.stringToUTF8(val, str_mem, Module.lengthBytesUTF8(val) + 1);
-                            });
+            if (text.length === 0) {
+                /* in case empty array is passed */
+                text = '';
+            }
 
-                            tguy_constructor = TGuy.tguy_from_cstr_arr_ex;
-                            len = text.length;
-                            text = arr_mem;
-                        } else if (typeof (text) == 'string') {
-                            tguy_constructor = TGuy.tguy_from_utf8_ex;
-                            len = Module.lengthBytesUTF8(text);
-                        } else {
-                            throw TypeError("text must be a string or array of strings");
-                        }
+            if (Array.isArray(text)) {
+                if (!text.every(s => typeof s === 'string')) {
+                    throw TypeError('text must only contain strings');
+                }
 
-                        this.tgobj = tguy_constructor(
-                            text, len, spacing,
-                            space, -1,
-                            can, -1,
-                            right, -1,
-                            left, -1
-                        );
-                        if (typeof (text) === "number") {
-                            Module._free(text);
-                        }
+                /* this allocated block of memory is in form of
+                struct {
+                    char *arr[text.length];
+                    char str_mem[strings_size_bytes];
+                } */
+                const arr_size_bytes = text.length * PTR_SIZE;
+                const strings_size_bytes = text.reduce(
+                    ((acc, val) => acc + lengthBytesUTF8(val) + 1),
+                    0
+                );
+                /* allocate array of char * + memory for storing strings including nul terminators */
+                let arr_mem = malloc(arr_size_bytes + strings_size_bytes);
+                if (!arr_mem) {
+                    throw RangeError('No memory left for array allocation');
+                }
 
-                        if (this.tgobj === null) {
-                            throw RangeError("Out of memory");
-                        }
+                let str_mem = arr_mem + arr_size_bytes;
+                text.forEach((chrs, i) => {
+                    /* point arr to memory of str_mem, where we write current string */
+                    setValue(arr_mem + (i * PTR_SIZE), str_mem, '*');
+                    /* advance memory by number of bytes written + nul terminator */
+                    str_mem += stringToUTF8(chrs, str_mem, lengthBytesUTF8(chrs) + 1) + 1;
+                });
 
-                        this.nframes = TGuy.tguy_get_frames_count(this.tgobj);
-                        this.frame = 0;
-                    }
+                tguy_constructor = tguy_from_cstr_arr_ex;
+                len = text.length;
+                text = arr_mem;
+            } else if (typeof text === 'string') {
+                tguy_constructor = tguy_from_utf8_ex;
+                len = lengthBytesUTF8(text);
+            } else {
+                throw TypeError('text must be a string or array of strings');
+            }
 
-                    destructor() {
-                        TGuy.tguy_free(this.tgobj);
-                    }
+            this.tgobj = tguy_constructor(
+                text, len, spacing,
+                space, -1,
+                can, -1,
+                right, -1,
+                left, -1
+            );
+            if (typeof text === 'number') {
+                free(text);
+            }
 
-                    set_frame(i) {
-                        if (i < 0 || i >= this.nframes) {
-                            throw RangeError(`Bad index value ${i}, must be in range [0, ${this.nframes})`);
-                        }
-                        TGuy.tguy_set_frame(this.tgobj, i);
-                        this.frame = i;
-                    }
+            if (this.tgobj === null) {
+                throw RangeError('Out of memory');
+            }
 
-                    get_current_frame() {
-                        return this.frame;
-                    }
+            this.nframes = tguy_get_frames_count(this.tgobj);
+            this.frame = 0;
+        }
 
-                    get_frames_count() {
-                        return this.nframes;
-                    }
+        /** @returns {void} */
+        destructor() {
+            tguy_free(this.tgobj);
+        }
 
-                    toString() {
-                        return TGuy.tguy_get_string(this.tgobj, null);
-                    }
+        /**
+         * @param {number} i
+         * @returns {void}
+         */
+        set_frame(i) {
+            if (i < 0 || i >= this.nframes) {
+                throw RangeError(`Bad index value ${i}, must be in range [0, ${this.nframes})`);
+            }
+            tguy_set_frame(this.tgobj, i);
+            this.frame = i;
+        }
 
-                    [Symbol.iterator]() {
-                        let index = 0;
+        /** @returns {number} */
+        get_current_frame() {
+            return this.frame;
+        }
+
+        /** @returns {number} */
+        get_frames_count() {
+            return this.nframes;
+        }
+
+        /** @returns {string} */
+        toString() {
+            return tguy_get_string(this.tgobj, null);
+        }
+
+        /** @returns {{next: function(): {value: string?, done: boolean}}} */
+        [Symbol.iterator]() {
+            let index= 0;
+            return {
+                next: () => {
+                    if (index < this.nframes) {
+                        this.set_frame(index++);
                         return {
-                            next: () => {
-                                let value = null;
-                                let done = true;
-
-                                if (index < this.nframes) {
-                                    this.set_frame(index++);
-                                    value = this.toString();
-                                    done = false;
-                                }
-                                return {
-                                    value: value,
-                                    done: done
-                                };
-                            }
+                            value: this.toString(),
+                            done: false
                         };
                     }
+                    return {
+                        value: null,
+                        done: true
+                    };
                 }
+            };
+        }
+    }
 
-                if (typeof window != "undefined") {
-                    window['TGuy'] = TGuy;
-                }
-                Module['TGuy'] = TGuy;
+    /* make so that closures don't optimize or rename methods out */
+    TGuy.prototype['destructor'] = TGuy.prototype.destructor;
+    TGuy.prototype['set_frame'] = TGuy.prototype.set_frame;
+    TGuy.prototype['get_current_frame'] = TGuy.prototype.get_current_frame;
+    TGuy.prototype['get_frames_count'] = TGuy.prototype.get_frames_count;
 
-                resolve(Module);
-            });
-    });
-}
+    Module['TGuy'] = TGuy;
+})();

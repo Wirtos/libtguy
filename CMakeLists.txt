@@ -22,8 +22,16 @@ set(CMAKE_C_EXTENSIONS OFF)
 
 option(BUILD_SHARED_LIBS "Build libtguy as dynamic library" OFF)
 option(TGUY_USE_FASTCLEAR "Double arena memory usage to increase speed" ON)
-option(TGUY_USE_UTF8PROC "Use utf8proc library for full unicode support" ON)
 option(TGUY_BUILD_DOCS "Build doxygen docs" OFF)
+option(TGUY_USE_UTF8PROC "Use utf8proc library for full unicode support. Legacy, use options available in TGUY_UNICODE_LIBRARY instead" OFF)
+set(TGUY_UNICODE_LIBRARY "utf8proc" CACHE STRING
+    "Select a unicode support backend")
+set_property(CACHE TGUY_UNICODE_LIBRARY PROPERTY STRINGS
+    "utf8proc" #[["libgrapheme" not yet supported]] "none")
+if (TGUY_USE_UTF8PROC)
+    message(WARNING "TGUY_USE_UTF8PROC is deprecated, use TGUY_UNICODE_LIBRARY='utf8proc'")
+    set(TGUY_UNICODE_LIBRARY "utf8proc")
+endif ()
 
 message(STATUS "libtguy ${TGUY_VERSION}")
 
@@ -42,7 +50,8 @@ target_sources(${PROJECT_NAME}
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
     LIBTGUY_EXPORTS
-    $<$<NOT:$<BOOL:${BUILD_SHARED_LIBS}>>:LIBTGUY_STATIC_DEFINE>
+    PUBLIC
+    $<$<BOOL:${BUILD_SHARED_LIBS}>:LIBTGUY_SHARED_DEFINE>
 )
 
 # link libm for sqrt where applicable
@@ -63,14 +72,15 @@ if (TGUY_USE_FASTCLEAR)
     target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_FASTCLEAR)
 endif ()
 
-if (TGUY_USE_UTF8PROC)
+if ("${TGUY_UNICODE_LIBRARY}" STREQUAL "utf8proc")
+    message(STATUS "using utf8proc for unicode support")
     find_package(UTF8Proc CONFIG QUIET)
     if (NOT UTF8Proc_FOUND)
         include(FetchContent)
         FetchContent_Declare(
             utf8proc
             GIT_REPOSITORY https://github.com/JuliaStrings/utf8proc
-            GIT_TAG 90daf9f396cfec91668758eb9cc54bd5248a6b89
+            GIT_TAG e46d2dba26a06f2ec3c57d944c8b679c6d8fea44
         )
         set(BUILD_SHARED_LIBS OFF)
         FetchContent_MakeAvailable(utf8proc)
@@ -79,6 +89,24 @@ if (TGUY_USE_UTF8PROC)
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_USE_UTF8PROC)
     target_link_libraries(${PROJECT_NAME} PRIVATE utf8proc)
+elseif ("${TGUY_UNICODE_LIBRARY}" STREQUAL "libgrapheme")
+    message(STATUS "using libgrapheme for unicode support")
+    find_package(grapheme QUIET CONFIG)
+    if (NOT grapheme_FOUND)
+        include(FetchContent)
+        # Fallback: fetch and build
+        FetchContent_Declare(
+            grapheme
+            GIT_REPOSITORY https://git.suckless.org/libgrapheme
+            GIT_TAG master
+        )
+        set(BUILD_SHARED_LIBS OFF)
+        FetchContent_MakeAvailable(grapheme)
+        unset(BUILD_SHARED_LIBS)
+    endif()
+
+    target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_USE_LIBGRAPHEME)
+    target_link_libraries(${PROJECT_NAME} PRIVATE grapheme)
 endif ()
 
 include(GNUInstallDirs)
@@ -109,25 +137,33 @@ write_basic_package_version_file(
 )
 
 if (EMSCRIPTEN)
+    option(TGUY_WASM_ONLY_BINDINGS "Only include methods which are used by the bindings" OFF)
+    if (NOT TGUY_WASM_ONLY_BINDINGS)
+        # export all the functions in libtguy and not those explicitly defined in EXPORTED_FUNCTIONS
+        target_compile_definitions(${PROJECT_NAME} PRIVATE LIBTGUY_EXPORT=__attribute__\(\(used\)\))
+    endif ()
     # cmake emits EXPORT as __attribute__((visibility ("default"))), which doesn't actually keep the function alive in emscripten
-    target_compile_definitions(${PROJECT_NAME} PRIVATE LIBTGUY_EXPORT=__attribute__\(\(used\)\))
     # this is ugly but emscripten toolchain is dumb and doesn't have an option to build library target as wasm
     # make a dummy file as executable needs at least one source to be present
     set(dummy ${CMAKE_CURRENT_BINARY_DIR}/emsdkdummy.c)
     file(WRITE "${dummy}" "")
     add_executable(${PROJECT_NAME}_wasm "${dummy}")
     # for some fucking reason emscripten ignores entire object inside the archive despite being marked as used
-    target_link_libraries(${PROJECT_NAME}_wasm PRIVATE -Wl,--whole-archive ${PROJECT_NAME} -Wl,--no-whole-archive)
+    target_link_libraries(${PROJECT_NAME}_wasm PRIVATE ${PROJECT_NAME})
 
     target_link_options(${PROJECT_NAME}_wasm PRIVATE
         -Wclosure
-        -sEXPORTED_RUNTIME_METHODS=[cwrap,lengthBytesUTF8,stringToUTF8]
-        -sEXPORTED_FUNCTIONS=[_malloc,_free]
+        -sEXPORTED_RUNTIME_METHODS=[cwrap,lengthBytesUTF8,stringToUTF8,setValue,POINTER_SIZE]
+        -sEXPORTED_FUNCTIONS=[_malloc,_free,_tguy_from_utf8_ex,_tguy_from_cstr_arr_ex,_tguy_set_frame,_tguy_get_string,_tguy_free,_tguy_get_frames_count]
         -sMODULARIZE=1
         -sFILESYSTEM=0
         -sEXPORT_NAME=TGuyModule
         --closure=$<IF:$<CONFIG:Debug>,0,1>
-        --extern-post-js "${CMAKE_CURRENT_SOURCE_DIR}/bindings/libtguy.js"
+        --post-js "${CMAKE_CURRENT_SOURCE_DIR}/bindings/libtguy.js"
+    )
+    #[[ trigger target linking if js bindings file changes ]]
+    set_target_properties(${PROJECT_NAME}_wasm PROPERTIES
+        LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/bindings/libtguy.js"
     )
 
     set(TGUY_WASM_BASE_NAME $<TARGET_FILE_PREFIX:${PROJECT_NAME}>$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>)
@@ -136,7 +172,7 @@ if (EMSCRIPTEN)
     install(FILES
         "${CMAKE_CURRENT_BINARY_DIR}/${TGUY_WASM_BASE_NAME}.wasm"
         "${CMAKE_CURRENT_BINARY_DIR}/${TGUY_WASM_BASE_NAME}.js"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/${PACKAGE_NAME}")
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}")
 endif ()
 
 if (TGUY_BUILD_DOCS)

@@ -15,13 +15,13 @@
 /**MAJOR*/
 #define TGUY_VER_MAJOR 0
 /**MINOR*/
-#define TGUY_VER_MINOR 13
+#define TGUY_VER_MINOR 15
 /**PATCH*/
 #define TGUY_VER_PATCH 0
 
 /**@}*/
 
-#ifdef LIBTGUY_STATIC_DEFINE
+#ifndef LIBTGUY_SHARED_DEFINE
     #ifndef LIBTGUY_EXPORT
         #define LIBTGUY_EXPORT
     #endif

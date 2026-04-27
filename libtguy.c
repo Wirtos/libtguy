@@ -144,6 +144,7 @@ TrashGuyState *tguy_from_arr_ex_2(const TGStrView arr[],
                                   TGStrView *sprite_right,
                                   TGStrView *sprite_left,
                                   int preserve_strings) {
+    if (arr == NULL) len = 0;
     struct TrashGuyState *st;
     size_t str_len = 0;
     char *str_mem = NULL;
@@ -348,40 +349,44 @@ TrashGuyState *tguy_from_utf8_ex(const char string[], size_t len, unsigned spaci
                                  const char *sprite_can, size_t sprite_can_len,
                                  const char *sprite_right, size_t sprite_right_len,
                                  const char *sprite_left, size_t sprite_left_len) {
-    TrashGuyState *st;
+    TrashGuyState *st = NULL;
     TGStrView *strarr = NULL;
     TGStrView sv_sprite_space, sv_sprite_can, sv_sprite_right, sv_sprite_left;
-    len = (len == (size_t)-1) ? strlen(string) : len;
+    size_t flen = 0;
 
+    if (string == NULL) len = 0;
+
+    len = (len == (size_t)-1) ? strlen(string) : len;
     /* Sanity check the len */
     if (len > INT_MAX) return NULL;
-
+    if (len > 0) {
 #ifdef TGUY_USE_UTF8PROC
-    size_t flen = tguy_graphemes_len(string, len);
+        flen = tguy_graphemes_len(string, len);
 #else
-    size_t flen = tguy_codepoints_len(string, len);
+        flen = tguy_codepoints_len(string, len);
 #endif
-    if (flen > INT_MAX) return NULL;
+        if (flen > INT_MAX) return NULL;
 
-    if (flen) {
-        strarr = malloc(sizeof(strarr[0]) * flen);
-        if (strarr == NULL) return NULL;
+        if (flen) {
+            strarr = malloc(sizeof(strarr[0]) * flen);
+            if (strarr == NULL) return NULL;
 
-        size_t i = 0;
+            size_t i = 0;
 #ifdef TGUY_USE_UTF8PROC
-        /* fill the array with ranges of the string representing whole utf-8 grapheme clusters */
-        utf8proc_ssize_t read_bytes = 0;
-        uint32_t start, end;
-        while (tguy_iterate_graphemes((unsigned char *)string, &read_bytes, len, &start, &end)) {
-            cstr2tgstrv(&strarr[i++], &string[start], end - start);
-        }
+            /* fill the array with ranges of the string representing whole utf-8 grapheme clusters */
+            utf8proc_ssize_t read_bytes = 0;
+            uint32_t start, end;
+            while (tguy_iterate_graphemes((unsigned char *)string, &read_bytes, len, &start, &end)) {
+                cstr2tgstrv(&strarr[i++], &string[start], end - start);
+            }
 #else
-        const char *start = string, *end = string + len;
-        while ((start = tguy_utf8_next(start, end))) {
-            cstr2tgstrv(&strarr[i++], string, start - string);
-            string = start;
-        }
+            const char *start = string, *end = string + len;
+            while ((start = tguy_utf8_next(start, end))) {
+                cstr2tgstrv(&strarr[i++], string, start - string);
+                string = start;
+            }
 #endif
+        }
     }
 
     st = tguy_from_arr_ex(strarr, flen, spacing,
@@ -408,10 +413,15 @@ TrashGuyState *tguy_from_cstr_arr_ex(const char *const arr[], size_t len, unsign
                                      const char *sprite_left, size_t sprite_left_len) {
     TrashGuyState *st;
     TGStrView sv_sprite_space, sv_sprite_can, sv_sprite_right, sv_sprite_left;
-    TGStrView *svarr = malloc(sizeof(svarr[0]) * len);
+    TGStrView *svarr = NULL;
+    if (arr == NULL) len = 0;
+    if (len != 0) {
+        svarr = malloc(sizeof(svarr[0]) * len);
+        if (svarr == NULL) return NULL;
+        /* create array of string views from C array */
+        for (size_t i = 0; i < len; i++) { cstr2tgstrv(&svarr[i], arr[i], (size_t)-1); }
+    }
 
-    if (svarr == NULL) return NULL;
-    for (size_t i = 0; i < len; i++) { cstr2tgstrv(&svarr[i], arr[i], -1u); }
     st = tguy_from_arr_ex(svarr, len, spacing,
                           cstr2tgstrv(&sv_sprite_space, sprite_space, sprite_space_len),
                           cstr2tgstrv(&sv_sprite_can, sprite_can, sprite_can_len),
