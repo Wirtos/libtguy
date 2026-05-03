@@ -102,15 +102,19 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_arr_ex(const TGStrView *arr, size_t len,
 LIBTGUY_EXPORT TrashGuyState *tguy_from_arr(const TGStrView *arr, size_t len, unsigned spacing);
 
 /**
- * todo: docs
- * @param string
- * @param len
- * @param spacing
- * @param sprite_space
- * @param sprite_can
- * @param sprite_right
- * @param sprite_left
- * @return
+ *  Creates new TrashGuysState from a utf-8 string, where each grapheme cluster is made into an element to dump
+ * @param string            Valid utf-8 string, in case of NULL, acts like empty string and len is set as 0
+ * @param len               Number of bytes string has, if -1, then strlen will be used
+ * @param spacing           Number of space sprites to be placed between the TrashGuy sprite and fist element initially
+ * @param sprite_space      Sprite to be used as empty space
+ * @param sprite_space_len  Number of bytes for sprite_space
+ * @param sprite_can        Sprite to be used as trash can
+ * @param sprite_can_len    Number of bytes for sprite_can
+ * @param sprite_right      Sprite to be used when TrashGuy moves right
+ * @param sprite_right_len  Number of bytes for sprite_right
+ * @param sprite_left       Sprite to be used when TrashGuy moves left
+ * @param sprite_left_len   Number of bytes for sprite_left
+ * @return TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
  */
 LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, unsigned spacing,
     const char *sprite_space, size_t sprite_space_len,
@@ -119,8 +123,8 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, 
     const char *sprite_left, size_t sprite_left_len);
 
 /**
- *  Creates new TrashGuysState from valid utf-8 string
- * @param string       valid utf-8 string, each grapheme cluster is a separate element for TrashGuy to dump to the bin
+ *  Creates new TrashGuysState from valid utf-8 string, where each grapheme cluster is made into an element to dump
+ * @param string       Valid utf-8 string, in case of NULL, acts like empty string and len is set as 0
  * @param len          Number of bytes string has, if -1, then strlen will be used
  * @param spacing      Number of space sprites to be placed between the TrashGuy sprite and fist element initially
  * @return             TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
@@ -128,18 +132,17 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8_ex(const char *string, size_t len, 
 LIBTGUY_EXPORT TrashGuyState *tguy_from_utf8(const char string[], size_t len, unsigned spacing);
 
 /**
- * todo: docs
- * @param arr
- * @param len
- * @param spacing
- * @param sprite_space
- * @param sprite_space_len
- * @param sprite_can
- * @param sprite_can_len
- * @param sprite_right
- * @param sprite_right_len
- * @param sprite_left
- * @param sprite_left_len
+ * @param arr               Array of nul-terminated C strings, in case of NULL, acts like empty array and len is set as 0
+ * @param len               Number of elements in array
+ * @param spacing           Number of space sprites to be placed between the TrashGuy sprite and fist element initially
+ * @param sprite_space      Sprite to be used as empty space
+ * @param sprite_space_len  Number of bytes for sprite_space
+ * @param sprite_can        Sprite to be used as trash can
+ * @param sprite_can_len    Number of bytes for sprite_can
+ * @param sprite_right      Sprite to be used when TrashGuy moves right
+ * @param sprite_right_len  Number of bytes for sprite_right
+ * @param sprite_left       Sprite to be used when TrashGuy moves left
+ * @param sprite_left_len   Number of bytes for sprite_left
  * @return
  */
 LIBTGUY_EXPORT TrashGuyState *tguy_from_cstr_arr_ex(const char *const arr[], size_t len, unsigned spacing,
@@ -150,10 +153,9 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_cstr_arr_ex(const char *const arr[], siz
 
 
 /**
- * todo: docs
- * @param arr
- * @param len
- * @param spacing
+ * @param arr               Array of nul-terminated C strings, in case of NULL, acts like empty array and len is set as 0
+ * @param len               Number of elements in array
+ * @param spacing           Number of space sprites to be placed between the TrashGuy sprite and fist element initially
  * @return
  */
 LIBTGUY_EXPORT TrashGuyState *tguy_from_cstr_arr(const char *const arr[], size_t len, unsigned spacing);
