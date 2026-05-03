@@ -402,11 +402,11 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><b>tguy_get_stri
         </tr>
       </table>
 </div><div class="memdoc">
-<p>todo: docs </p><dl class="params"><dt>Parameters</dt><dd>
+<dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">arr</td><td></td></tr>
-    <tr><td class="paramname">len</td><td></td></tr>
-    <tr><td class="paramname">spacing</td><td></td></tr>
+    <tr><td class="paramname">arr</td><td>Array of nul-terminated C strings, in case of NULL, acts like empty array and len is set as 0 </td></tr>
+    <tr><td class="paramname">len</td><td>Number of elements in array </td></tr>
+    <tr><td class="paramname">spacing</td><td>Number of space sprites to be placed between the TrashGuy sprite and fist element initially </td></tr>
   </table>
   </dd>
 </dl>
@@ -493,19 +493,19 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><b>tguy_get_stri
         </tr>
       </table>
 </div><div class="memdoc">
-<p>todo: docs </p><dl class="params"><dt>Parameters</dt><dd>
+<dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">arr</td><td></td></tr>
-    <tr><td class="paramname">len</td><td></td></tr>
-    <tr><td class="paramname">spacing</td><td></td></tr>
-    <tr><td class="paramname">sprite_space</td><td></td></tr>
-    <tr><td class="paramname">sprite_space_len</td><td></td></tr>
-    <tr><td class="paramname">sprite_can</td><td></td></tr>
-    <tr><td class="paramname">sprite_can_len</td><td></td></tr>
-    <tr><td class="paramname">sprite_right</td><td></td></tr>
-    <tr><td class="paramname">sprite_right_len</td><td></td></tr>
-    <tr><td class="paramname">sprite_left</td><td></td></tr>
-    <tr><td class="paramname">sprite_left_len</td><td></td></tr>
+    <tr><td class="paramname">arr</td><td>Array of nul-terminated C strings, in case of NULL, acts like empty array and len is set as 0 </td></tr>
+    <tr><td class="paramname">len</td><td>Number of elements in array </td></tr>
+    <tr><td class="paramname">spacing</td><td>Number of space sprites to be placed between the TrashGuy sprite and fist element initially </td></tr>
+    <tr><td class="paramname">sprite_space</td><td>Sprite to be used as empty space </td></tr>
+    <tr><td class="paramname">sprite_space_len</td><td>Number of bytes for sprite_space </td></tr>
+    <tr><td class="paramname">sprite_can</td><td>Sprite to be used as trash can </td></tr>
+    <tr><td class="paramname">sprite_can_len</td><td>Number of bytes for sprite_can </td></tr>
+    <tr><td class="paramname">sprite_right</td><td>Sprite to be used when TrashGuy moves right </td></tr>
+    <tr><td class="paramname">sprite_right_len</td><td>Number of bytes for sprite_right </td></tr>
+    <tr><td class="paramname">sprite_left</td><td>Sprite to be used when TrashGuy moves left </td></tr>
+    <tr><td class="paramname">sprite_left_len</td><td>Number of bytes for sprite_left </td></tr>
   </table>
   </dd>
 </dl>
@@ -544,9 +544,9 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><b>tguy_get_stri
         </tr>
       </table>
 </div><div class="memdoc">
-<p>Creates new TrashGuysState from valid utf-8 string </p><dl class="params"><dt>Parameters</dt><dd>
+<p>Creates new TrashGuysState from valid utf-8 string, where each grapheme cluster is made into an element to dump </p><dl class="params"><dt>Parameters</dt><dd>
   <table class="params">
-    <tr><td class="paramname">string</td><td>valid utf-8 string, each grapheme cluster is a separate element for TrashGuy to dump to the bin </td></tr>
+    <tr><td class="paramname">string</td><td>Valid utf-8 string, in case of NULL, acts like empty string and len is set as 0 </td></tr>
     <tr><td class="paramname">len</td><td>Number of bytes string has, if -1, then strlen will be used </td></tr>
     <tr><td class="paramname">spacing</td><td>Number of space sprites to be placed between the TrashGuy sprite and fist element initially </td></tr>
   </table>
