@@ -177,13 +177,18 @@ endif ()
 
 if (TGUY_BUILD_DOCS)
     find_package(Doxygen REQUIRED)
-
-    set(DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen")
+    set(TGUY_DOXYGEN_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/doxygen" CACHE PATH
+        "Default doxygen directory to output docs to")
+    set(DOXYGEN_OUTPUT_DIRECTORY "${TGUY_DOXYGEN_OUTPUT_DIRECTORY}")
     set(DOXYGEN_EXTRACT_STATIC YES)
     doxygen_add_docs(${PROJECT_NAME}_docs
         libtguy.c
         libtguy.h
         ALL
     )
-    install(DIRECTORY "${DOXYGEN_OUTPUT_DIRECTORY}" DESTINATION "${CMAKE_INSTALL_DOCDIR}/${PROJECT_NAME}")
+
+    install(
+        DIRECTORY "${TGUY_DOXYGEN_OUTPUT_DIRECTORY}"
+        DESTINATION "${CMAKE_INSTALL_DOCDIR}"
+        COMPONENT docs)
 endif ()

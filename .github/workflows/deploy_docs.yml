@@ -1,6 +1,6 @@
 # This starter workflow is for a CMake project running on a single platform. There is a different starter workflow if you need cross-platform coverage.
 # See: https://github.com/actions/starter-workflows/blob/main/ci/cmake-multi-platform.yml
-name: CMake on a single platform
+name: Deploy doxygen docs
 
 on:
   push:
@@ -21,21 +21,21 @@ jobs:
 
     steps:
     - uses: actions/checkout@v4
-    - name: Install Doxygen
-      run: sudo apt-get install -y doxygen
-    - name: Configure CMake
-      # Configure CMake in a 'build' subdirectory. `CMAKE_BUILD_TYPE` is only required if you are using a single-configuration generator such as make.
-      # See https://cmake.org/cmake/help/latest/variable/CMAKE_BUILD_TYPE.html?highlight=cmake_build_type
-      run: cmake -B ${{github.workspace}}/build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DTGUY_BUILD_DOCS=ON
+    # install and cache doxygen
+    - uses: awalsh128/cache-apt-pkgs-action@v1.6.0
+      with:
+        packages: doxygen
+        version: 1.0
 
+    - name: Configure CMake
+      run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DTGUY_BUILD_DOCS=ON
     - name: Build doxygen docs
-      # Build your program with the given configuration
-      run: cmake --build ${{github.workspace}}/build --config ${{env.BUILD_TYPE}} --target tguy_docs
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --target tguy_docs
+    - name: Install doxygen docs
+      run: cmake --install build --component docs --prefix install
 
     - name: Deploy to GitHub Pages
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: ${{github.workspace}}/build/doxygen/html
-
-
+        publish_dir: install/share/doc/tguy/doxygen/html
