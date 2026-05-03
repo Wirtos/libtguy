@@ -2,47 +2,54 @@ name: build
 
 on:
   push:
-    tags: ['*']
+    tags: [ '*' ]
     branches: [ "master" ]
 
 env:
   # Customize the CMake build type here (Release, Debug, RelWithDebInfo, etc.)
   BUILD_TYPE: Release
   WASM_BUILD_TYPE: MinSizeRel
+  EM_VERSION: '5.0.7'
+  EM_CACHE_FOLDER: 'emsdk-cache'
 
 jobs:
   build-wasm:
     runs-on: ubuntu-latest
-
     steps:
-      - uses: actions/checkout@v4
-      - uses: emscripten-core/setup-emsdk@v15
+      - uses: actions/checkout@v6
+      - name: Setup emsdk
+        uses: emscripten-core/setup-emsdk@v15
+        with:
+          version: ${{env.EM_VERSION}}
+          actions-cache-folder: ${{env.EM_CACHE_FOLDER}}
       - name: Configure project
         run: |
-          cmake -S . -B ${{github.workspace}}/build_smol -DCMAKE_BUILD_TYPE=${{env.WASM_BUILD_TYPE}} \
+          cmake -B build_smol -DCMAKE_BUILD_TYPE=${{env.WASM_BUILD_TYPE}} \
           -DCMAKE_TOOLCHAIN_FILE="$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" \
-          -DCMAKE_INSTALL_PREFIX="${{github.workspace}}/tguy_install" \
           -DTGUY_WASM_LIB=ON \
           -DTGUY_UNICODE_LIBRARY=none \
-          -DTGUY_WASM_ONLY_BINDINGS=ON
-          cmake -S . -B ${{github.workspace}}/build_big -DCMAKE_BUILD_TYPE=${{env.WASM_BUILD_TYPE}} \
+          -DTGUY_WASM_ONLY_BINDINGS=ON \
+          -DCMAKE_INSTALL_PREFIX="tguy_install"
+                      
+          cmake -B build_big -DCMAKE_BUILD_TYPE=${{env.WASM_BUILD_TYPE}} \
           -DCMAKE_TOOLCHAIN_FILE="$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" \
-          -DCMAKE_INSTALL_PREFIX="${{github.workspace}}/tguy_big_install" \
           -DTGUY_WASM_LIB=ON \
           -DTGUY_UNICODE_LIBRARY=utf8proc \
-          -DTGUY_WASM_ONLY_BINDINGS=ON
+          -DTGUY_WASM_ONLY_BINDINGS=ON \
+          -DCMAKE_INSTALL_PREFIX="tguy_big_install" 
 
       - name: Install artifacts
         run: |
-          cmake --build ${{github.workspace}}/build_smol --target install
-          cmake --build ${{github.workspace}}/build_big --target install
-          cp ${{github.workspace}}/tguy_big_install/lib/libtguy.wasm ${{github.workspace}}/tguy_big_install/lib/libtguy_big.wasm
+          cmake --build build_smol --target install
+          cmake --build build_big --target install
+          cp tguy_big_install/lib/libtguy.wasm tguy_big_install/lib/libtguy_big.wasm
+
       - name: Publish Release if ref is a release tag
         uses: softprops/action-gh-release@v3
         if: startsWith(github.ref, 'refs/tags/')
         with:
           fail_on_unmatched_files: true
           files: |
-            ${{github.workspace}}/tguy_install/lib/libtguy.js
-            ${{github.workspace}}/tguy_install/lib/libtguy.wasm
-            ${{github.workspace}}/tguy_big_install/lib/libtguy_big.wasm
+            tguy_install/lib/libtguy.js
+            tguy_install/lib/libtguy.wasm
+            tguy_big_install/lib/libtguy_big.wasm
