@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['initial_5fframes_5fcount_0',['initial_frames_count',['../structTrashGuyState.html#a113470ade7a9dea39aa915fde2c97e99',1,'TrashGuyState']]]
+  ['get_5ffirst_5fframe_5ffor_5felement_0',['get_first_frame_for_element',['../libtguy_8c.html#ad8263c806a50fc3984b51aacf7dd44a4',1,'libtguy.c']]]
 ];
