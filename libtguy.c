@@ -48,7 +48,7 @@ static TGStrView *cstr2tgstrv(TGStrView *res, const char *str, size_t len) {
  * Struct to keep relevant TrashGuy data
  */
 struct TrashGuyState {
-    unsigned initial_frames_count; /**< number of frames spent to process first element,
+    unsigned first_element_frames_count; /**< number of frames spent to process first element,
                                     * computed from spacing provided by the user: \n
                                     *   <code> (\ref tguy_from_arr_ex() "spacing" + 1) * 2 </code> */
     TGStrView sprite_right, /**< when facing right */
@@ -71,18 +71,18 @@ struct TrashGuyState {
 /**
  *  Returns first frame of sequence of frames involving the work with element_index of TrashGuyState::text. \n
  *  You can perceive this function as a parabola, where each x is element_index and y is returned frame (starts from 0): \n
- *  <code> frame = element_index<sup>2</sup> + (TrashGuyState::initial_frames_count - 1)element_index </code> \n
+ *  <code> frame = element_index<sup>2</sup> + (TrashGuyState::first_element_frames_count - 1)element_index </code> \n
  *  See <a href='https://www.desmos.com/calculator/6z0ewdyxpq'>this visualization</a>. \n
  *  For example: \n
- *      <code> (get_frame_lower_boundary(4, i + 1) - get_frame_lower_boundary(4, i)) </code> \n
+ *      <code> (get_first_frame_for_element(4, i + 1) - get_first_frame_for_element(4, i)) </code> \n
  *  will yield number of frames needed to process i-th element if
- *   TrashGuyState::initial_frames_count was 4. \n
- * @param initial_frames_count  TrashGuyState::initial_frames_count
+ *   TrashGuyState::first_element_frames_count was 4. \n
+ * @param first_element_frames_count  TrashGuyState::first_element_frames_count
  * @param element_index         index of text element in TrashGuyState::text[element_index]
- * @return                      first frame of for element_index
+ * @return                      first frame index for element_index
  */
-static inline unsigned get_frame_lower_boundary(unsigned initial_frames_count, unsigned element_index) {
-    return element_index * (element_index + initial_frames_count - 1);
+static inline unsigned get_first_frame_for_element(unsigned first_element_frames_count, unsigned element_index) {
+    return element_index * (element_index + first_element_frames_count - 1);
 }
 
 /**
@@ -133,16 +133,16 @@ static size_t strvarr_copy_src(TGStrView *dst, const TGStrView *src, size_t len,
 
 /* copy one array of strviews into another */
 static void strvarr_copy(TGStrView *dst, const TGStrView *src, size_t len) {
-    for (size_t i = 0; i < len; i++) { dst[i] = src[i]; }
+    for (size_t i = 0; i < len; i++) dst[i] = src[i];
 }
 
 TrashGuyState *tguy_from_arr_ex_2(const TGStrView arr[],
                                   size_t len,
                                   unsigned spacing,
-                                  TGStrView *sprite_space,
-                                  TGStrView *sprite_can,
-                                  TGStrView *sprite_right,
-                                  TGStrView *sprite_left,
+                                  const TGStrView *sprite_space,
+                                  const TGStrView *sprite_can,
+                                  const TGStrView *sprite_right,
+                                  const TGStrView *sprite_left,
                                   int preserve_strings) {
     if (arr == NULL) len = 0;
     struct TrashGuyState *st;
@@ -173,7 +173,7 @@ TrashGuyState *tguy_from_arr_ex_2(const TGStrView arr[],
             + sv_can.len
             + sv_space.len;
     }
-    st = malloc(str_mem_off + (sizeof(char) * str_len));
+    st = malloc(str_mem_off + str_len);
     if (st == NULL) return NULL;
 
     st->sprite_right = sv_right;
@@ -231,7 +231,9 @@ TrashGuyState *tguy_from_arr_ex_2(const TGStrView arr[],
     /* empty arena has the same size as arena, it's only filled with spaces and trash can sprite as first element */
     st->empty_arena_.data[0] = st->sprite_can;
     st->empty_arena_.data[st->empty_arena_.len] = (TGStrView){NULL, 0};
-    for (size_t i = 1, flen = st->empty_arena_.len; i < flen; i++) { st->empty_arena_.data[i] = st->sprite_space; }
+    for (size_t i = 1, flen = st->empty_arena_.len; i < flen; i++) {
+        st->empty_arena_.data[i] = st->sprite_space;
+    }
 #endif
 
     if (preserve_strings) {
@@ -241,7 +243,7 @@ TrashGuyState *tguy_from_arr_ex_2(const TGStrView arr[],
     }
 
     /* one frame for initial pos, spacing frames to walk over empty space to the first element, x2 to return back */
-    st->initial_frames_count = (spacing + 1) * 2;
+    st->first_element_frames_count = (spacing + 1) * 2;
     /* not computed yet and may not be computed at all */
     st->buf_size = 0;
     /* used to determine whether we should run set_frame and for unset assertions */
@@ -249,7 +251,7 @@ TrashGuyState *tguy_from_arr_ex_2(const TGStrView arr[],
     /* current element index we're working on, reduces computation for sequential set_frame */
     st->element_index = 0;
     /* number of frames up to the last + 1 */
-    st->max_frames = get_frame_lower_boundary(st->initial_frames_count, (unsigned)st->text.len) + 1;
+    st->max_frames = get_first_frame_for_element(st->first_element_frames_count, (unsigned)st->text.len) + 1;
     st->output_str = NULL;
 
     /* no need to clear the arena because set_frame will do it anyway */
@@ -261,10 +263,10 @@ TrashGuyState *tguy_from_arr_ex_2(const TGStrView arr[],
 TrashGuyState *tguy_from_arr_ex(const TGStrView arr[],
                                 size_t len,
                                 unsigned spacing,
-                                TGStrView *sprite_space,
-                                TGStrView *sprite_can,
-                                TGStrView *sprite_right,
-                                TGStrView *sprite_left) {
+                                const TGStrView *sprite_space,
+                                const TGStrView *sprite_can,
+                                const TGStrView *sprite_right,
+                                const TGStrView *sprite_left) {
     return tguy_from_arr_ex_2(arr, len, spacing, sprite_space, sprite_can, sprite_right, sprite_left, 1);
 }
 
@@ -457,9 +459,9 @@ void tguy_free(TrashGuyState *st) {
  *
  *  All we know is desired frame and number of frames per first element.
  *  -# Because of the get_frame_lower_boundary() we know that initial frame of each element is computed as: \n
- *     <code> frame = element_index * (initial_frames_count + element_index - 1) </code> \n
+ *     <code> frame = element_index * (first_element_frames_count + element_index - 1) </code> \n
  *     which is equivalent to this <a href='https://en.wikipedia.org/wiki/Quadratic_formula'>quadratic equation</a>: \n
- *     <code> (element_index)<sup>2</sup> + (initial_frames_count - 1)element_index - frame = 0 </code> \n
+ *     <code> (element_index)<sup>2</sup> + (first_element_frames_count - 1)element_index - frame = 0 </code> \n
  *     We solve this equation for element_index, which is x<sub>1</sub>. \n
  *     (x<sub>1</sub> means right wing of the parabola,
  *         x<sub>2</sub> (left side) is meaningless to us, valid indices/frames only reside on the right side) \n
@@ -480,27 +482,27 @@ void tguy_free(TrashGuyState *st) {
  */
 void tguy_set_frame(TrashGuyState *restrict st, unsigned frame) {
     /*         a                        b                              c       */
-    /* (element_index)^2 + (initial_frames_count - 1)element_index - frame = 0 */
+    /* (element_index)^2 + (first_element_frames_count - 1)element_index - frame = 0 */
     assert((ignored_"Frame is bigger than get_frames_count()", frame < st->max_frames));
     unsigned prev_frame = st->cur_frame;
     unsigned element_index;
-    unsigned initial_frames_count = st->initial_frames_count;
+    unsigned first_element_frames_count = st->first_element_frames_count;
     if (prev_frame == frame) return;
 
     if (prev_frame == frame - 1) {
         element_index = st->element_index;
     } else {
         /* unsigned a = 1; */
-        unsigned b = (initial_frames_count - 1), c = frame;
-        /* school math, see 1 */
-        unsigned t = (b * b) + (4 * c);
+        unsigned b = (first_element_frames_count - 1),
+                 c = frame,
+                 t = (b * b) + (4 * c);
         element_index = ((unsigned)sqrt(t) - b) / 2;
     }
 
     /* number of frames needed to process element, see 2 */
-    unsigned frames_per_element = initial_frames_count + (2 * element_index);
+    unsigned frames_per_element = first_element_frames_count + (2 * element_index);
     /* index of the frame in the frame series (up to frames_per_element) */
-    unsigned sub_frame = (frame - get_frame_lower_boundary(initial_frames_count, element_index));
+    unsigned sub_frame = (frame - get_first_frame_for_element(first_element_frames_count, element_index));
     /* if we're in the first half frames we're moving right, otherwise left */
     unsigned frames_per_direction = (frames_per_element / 2);
     unsigned right = (sub_frame < frames_per_direction);
@@ -564,7 +566,7 @@ unsigned tguy_get_frames_count(const TrashGuyState *st) { return st->max_frames;
 
 /**
  * If bsize is not set, then iterate over possible arena layout and
- * compute bufsize enough to keep any frame plus nul terminator
+ * compute buf size big enough to keep any frame plus nul terminator
  */
 size_t tguy_get_bsize(TrashGuyState *st) {
     /* for nul terminator */
@@ -577,7 +579,7 @@ size_t tguy_get_bsize(TrashGuyState *st) {
         sz += tg_max(st->text.data[i].len, st->sprite_space.len);
     }
     /* overall free space length */
-    sz += st->sprite_space.len * ((st->initial_frames_count / 2) - 1);
+    sz += st->sprite_space.len * ((st->first_element_frames_count / 2) - 1);
     sz += st->sprite_can.len;
     sz += tg_max(st->sprite_right.len, st->sprite_left.len);
 
@@ -599,4 +601,8 @@ const char *tguy_get_string(TrashGuyState *st, size_t *len) {
     }
     if (len != NULL) *len = plen;
     return st->output_str;
+}
+
+unsigned tguy_get_first_frame_for_element(const TrashGuyState *st, unsigned element_index) {
+    return get_first_frame_for_element(st->first_element_frames_count, element_index);
 }

@@ -65,7 +65,7 @@ set_target_properties(${PROJECT_NAME}
     PROPERTIES
         EXPORT_NAME ${PACKAGE_NAME}
         PREFIX "lib"
-        SOVERSION ${TGUY_VERSION_MAJOR}
+        SOVERSION ${TGUY_VERSION_MAJOR}.${TGUY_VERSION_MINOR}
 )
 
 if (TGUY_USE_FASTCLEAR)
@@ -113,13 +113,15 @@ include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
 # install targets' resulting files
-install(TARGETS ${PROJECT_NAME}
+install(
+    TARGETS ${PROJECT_NAME}
     EXPORT ${PACKAGE_NAME}Targets
     COMPONENT TGuy
     FILE_SET HEADERS
 )
 
-install(EXPORT ${PACKAGE_NAME}Targets
+install(
+    EXPORT ${PACKAGE_NAME}Targets
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
     NAMESPACE {PACKAGE_NAME}::
 )
@@ -153,11 +155,16 @@ if (EMSCRIPTEN)
 
     target_link_options(${PROJECT_NAME}_wasm PRIVATE
         -Wclosure
-        -sEXPORTED_RUNTIME_METHODS=[cwrap,lengthBytesUTF8,stringToUTF8,setValue,POINTER_SIZE]
-        -sEXPORTED_FUNCTIONS=[_malloc,_free,_tguy_from_utf8_ex,_tguy_from_cstr_arr_ex,_tguy_set_frame,_tguy_get_string,_tguy_free,_tguy_get_frames_count]
-        -sMODULARIZE=1
         -sFILESYSTEM=0
+        -sTEXTDECODER=2 # supported pretty much on every browser for ages, we don't need a fallback
+        -sMALLOC=emmalloc
+        -sENVIRONMENT=web
+
+        -sMODULARIZE=1
         -sEXPORT_NAME=TGuyModule
+        -sEXPORTED_RUNTIME_METHODS=[cwrap,lengthBytesUTF8,stringToUTF8,UTF8ToString,setValue,getValue,POINTER_SIZE]
+        -sEXPORTED_FUNCTIONS=[_malloc,_free,_tguy_from_utf8_ex,_tguy_from_cstr_arr_ex,_tguy_set_frame,_tguy_get_string,_tguy_free,_tguy_get_frames_count,_tguy_get_arr]
+
         --closure=$<IF:$<CONFIG:Debug>,0,1>
         --post-js "${CMAKE_CURRENT_SOURCE_DIR}/bindings/libtguy.js"
     )
@@ -169,10 +176,15 @@ if (EMSCRIPTEN)
     set(TGUY_WASM_BASE_NAME $<TARGET_FILE_PREFIX:${PROJECT_NAME}>$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>)
     set_target_properties(${PROJECT_NAME}_wasm PROPERTIES OUTPUT_NAME ${TGUY_WASM_BASE_NAME})
     # cmake (or emscripten toolchain) is dumb and doesn't know executable can emit few files so install them manually
-    install(FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/${TGUY_WASM_BASE_NAME}.wasm"
-        "${CMAKE_CURRENT_BINARY_DIR}/${TGUY_WASM_BASE_NAME}.js"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}")
+    install(
+        TARGETS ${PROJECT_NAME}_wasm
+        COMPONENT wasm
+    )
+    install(
+        FILES "${CMAKE_CURRENT_BINARY_DIR}/${TGUY_WASM_BASE_NAME}.wasm"
+        DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        COMPONENT wasm
+    )
 endif ()
 
 if (TGUY_BUILD_DOCS)

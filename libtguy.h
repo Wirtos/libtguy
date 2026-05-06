@@ -15,7 +15,7 @@
 /**MAJOR*/
 #define TGUY_VER_MAJOR 0
 /**MINOR*/
-#define TGUY_VER_MINOR 15
+#define TGUY_VER_MINOR 16
 /**PATCH*/
 #define TGUY_VER_PATCH 0
 
@@ -75,7 +75,7 @@ typedef struct TrashGuyState TrashGuyState;
  * @return             TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
  */
 LIBTGUY_EXPORT TrashGuyState *tguy_from_arr_ex_2(const TGStrView *arr, size_t len, unsigned spacing,
-    TGStrView *sprite_space, TGStrView *sprite_can, TGStrView *sprite_right, TGStrView *sprite_left,
+    const TGStrView *sprite_space, const TGStrView *sprite_can, const TGStrView *sprite_right, const TGStrView *sprite_left,
     int preserve_strings);
 
 /**
@@ -90,7 +90,7 @@ LIBTGUY_EXPORT TrashGuyState *tguy_from_arr_ex_2(const TGStrView *arr, size_t le
  * @return             TrashGuyState * or NULL on allocation failure, must be freed with tguy_free() after use
  */
 LIBTGUY_EXPORT TrashGuyState *tguy_from_arr_ex(const TGStrView *arr, size_t len, unsigned spacing,
-    TGStrView *sprite_space, TGStrView *sprite_can, TGStrView *sprite_right, TGStrView *sprite_left);
+    const TGStrView *sprite_space, const TGStrView *sprite_can, const TGStrView *sprite_right, const TGStrView *sprite_left);
 
 /**
  *  Creates new TrashGuysState from array of TGStrView using default sprites
@@ -211,19 +211,32 @@ LIBTGUY_EXPORT size_t tguy_sprint(const TrashGuyState *st, char buf[]);
 LIBTGUY_EXPORT size_t tguy_get_bsize(TrashGuyState *st);
 
 /**
- *  Returns read-only array of TrashGuy frame
+ *  Returns read-only array of TrashGuy frame: TGStrView[]{ {"t",1}, {"e",1}, {"ї",2}, {"s",1}, {"t",1}, {NULL,0} }
  * @param st           Valid TrashGuyState with frame set
- * @param[out,optional] len     Length of the returned array, excluding nul terminator
- * @return             Array of const TGStrView, nul terminated with TGStrView.str == NULL
+ * @param[out,optional] len     Length of the returned array, excluding NULL terminator
+ * @return             Array of const TGStrView,  terminated with TGStrView.str == NULL
  */
 LIBTGUY_EXPORT const TGStrView *tguy_get_arr(const TrashGuyState *st, size_t *len);
 
 /**
- *  Return pointer to utf-8 encoded null terminated string containing current set frame
+ *  Return read-only pointer to utf-8 encoded null terminated string containing current set frame.
+ *  Does NOT need to be freed manually, is freed by tguy_free() later.
+ *  Roughly equivalent to buf = malloc(tguy_get_bsize(st)) + tguy_sprint(st, buf)
  * @param st          Valid TrashGuyState with frame set
  * @param[out,optional] len    Length of the returned string in bytes
  * @return
  */
 LIBTGUY_EXPORT const char *tguy_get_string(TrashGuyState * restrict st, size_t *len);
+
+/**
+ *  Returns first frame for when certain element is being processed.
+ *  You can get a range of frames [first,last] for when certain element is processed by calling
+ *  first = tguy_get_first_frame_for_element(element_index)
+ *  last = tguy_get_first_frame_for_element(element_index + 1) - 1
+ * @param st            Valid TrashGuyState
+ * @param element_index Element index, in tguy_from_utf8("teїst",-1,4), 't' would be index 0, 'ї' would be index 2, etc.
+ * @return
+ */
+LIBTGUY_EXPORT unsigned tguy_get_first_frame_for_element(const TrashGuyState *st, unsigned element_index);
 
 #endif /* LIBTGUY_H */

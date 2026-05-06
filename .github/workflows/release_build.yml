@@ -42,7 +42,7 @@ jobs:
         run: |
           cmake --build build_smol --target install
           cmake --build build_big --target install
-          cp tguy_big_install/lib/libtguy.wasm tguy_big_install/lib/libtguy_big.wasm
+          cp tguy_big_install/bin/libtguy.wasm tguy_big_install/bin/libtguy_big.wasm
 
       - name: Publish Release if ref is a release tag
         uses: softprops/action-gh-release@v3
@@ -50,6 +50,6 @@ jobs:
         with:
           fail_on_unmatched_files: true
           files: |
-            tguy_install/lib/libtguy.js
-            tguy_install/lib/libtguy.wasm
-            tguy_big_install/lib/libtguy_big.wasm
+            tguy_install/bin/libtguy.js
+            tguy_install/bin/libtguy.wasm
+            tguy_big_install/bin/libtguy_big.wasm
