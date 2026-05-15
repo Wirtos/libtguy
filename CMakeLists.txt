@@ -80,7 +80,7 @@ if ("${TGUY_UNICODE_LIBRARY}" STREQUAL "utf8proc")
         FetchContent_Declare(
             utf8proc
             GIT_REPOSITORY https://github.com/JuliaStrings/utf8proc
-            GIT_TAG e46d2dba26a06f2ec3c57d944c8b679c6d8fea44
+            GIT_TAG 060824da775b09aed8402a0019db5430b3c39732
         )
         set(BUILD_SHARED_LIBS OFF)
         FetchContent_MakeAvailable(utf8proc)
@@ -88,7 +88,7 @@ if ("${TGUY_UNICODE_LIBRARY}" STREQUAL "utf8proc")
     endif ()
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_USE_UTF8PROC)
-    target_link_libraries(${PROJECT_NAME} PRIVATE utf8proc)
+    target_link_libraries(${PROJECT_NAME} PRIVATE utf8proc::utf8proc)
 elseif ("${TGUY_UNICODE_LIBRARY}" STREQUAL "libgrapheme")
     message(STATUS "using libgrapheme for unicode support")
     find_package(grapheme QUIET CONFIG)
@@ -123,7 +123,7 @@ install(
 install(
     EXPORT ${PACKAGE_NAME}Targets
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
-    NAMESPACE {PACKAGE_NAME}::
+    NAMESPACE ${PACKAGE_NAME}::
 )
 
 # Generate main config file
@@ -134,8 +134,15 @@ configure_package_config_file(
 )
 
 write_basic_package_version_file(
-    ${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Version.cmake
+    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Version.cmake"
     COMPATIBILITY SameMajorVersion
+)
+
+install(
+        FILES
+        "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Version.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
 )
 
 if (EMSCRIPTEN)
