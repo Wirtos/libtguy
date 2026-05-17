@@ -50,9 +50,15 @@ target_sources(${PROJECT_NAME}
 target_compile_definitions(${PROJECT_NAME}
     PRIVATE
     LIBTGUY_EXPORTS
-    PUBLIC
-    $<$<BOOL:${BUILD_SHARED_LIBS}>:LIBTGUY_SHARED_DEFINE>
 )
+
+if (BUILD_SHARED_LIBS)
+    target_compile_definitions(${PROJECT_NAME}
+        PUBLIC
+        LIBTGUY_SHARED_DEFINE
+    )
+endif ()
+
 
 # link libm for sqrt where applicable
 include(CheckLibraryExists)
@@ -103,7 +109,7 @@ elseif ("${TGUY_UNICODE_LIBRARY}" STREQUAL "libgrapheme")
         set(BUILD_SHARED_LIBS OFF)
         FetchContent_MakeAvailable(grapheme)
         unset(BUILD_SHARED_LIBS)
-    endif()
+    endif ()
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_USE_LIBGRAPHEME)
     target_link_libraries(${PROJECT_NAME} PRIVATE grapheme)
@@ -144,6 +150,14 @@ install(
         "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Version.cmake"
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
 )
+
+if (CMAKE_VERSION VERSION_GREATER_EQUAL "4.3")
+    install(
+        PACKAGE_INFO ${PACKAGE_NAME}
+        EXPORT ${PACKAGE_NAME}Targets
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
+    )
+endif ()
 
 if (EMSCRIPTEN)
     option(TGUY_WASM_ONLY_BINDINGS "Only include methods which are used by the bindings" OFF)
