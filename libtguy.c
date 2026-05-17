@@ -458,7 +458,7 @@ void tguy_free(TrashGuyState *st) {
  *  -# index within the arena
  *
  *  All we know is desired frame and number of frames per first element.
- *  -# Because of the get_frame_lower_boundary() we know that initial frame of each element is computed as: \n
+ *  -# Because of the get_first_frame_for_element() we know that initial frame of each element is computed as: \n
  *     <code> frame = element_index * (first_element_frames_count + element_index - 1) </code> \n
  *     which is equivalent to this <a href='https://en.wikipedia.org/wiki/Quadratic_formula'>quadratic equation</a>: \n
  *     <code> (element_index)<sup>2</sup> + (first_element_frames_count - 1)element_index - frame = 0 </code> \n
@@ -471,7 +471,7 @@ void tguy_free(TrashGuyState *st) {
  *
  *  -# Simple arithmetic progression, with each next element number of frames increases by 2.
  *
- *  -# We now have all the values needed to call get_frame_lower_boundary().
+ *  -# We now have all the values needed to call get_first_frame_for_element().
  *
  *  -# <code> boundary <= (boundary + sub_frame) < boundary + frames_per_element </code>, \n
  *     thus <code> sub_frame = frame - boundary </code>
@@ -536,7 +536,7 @@ size_t tguy_fprint(const TrashGuyState *st, FILE *fp) {
     size_t len = 0;
     for (size_t i = 0, flen = st->arena.len; i < flen; i++) {
         TGStrView sv = st->arena.data[i];
-        len += fprintf(fp, "%.*s", (int)sv.len, sv.str);
+        len += fwrite(sv.str, 1, sv.len, fp);
     }
     return len;
 }

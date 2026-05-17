@@ -17,7 +17,7 @@
 /**MINOR*/
 #define TGUY_VER_MINOR 16
 /**PATCH*/
-#define TGUY_VER_PATCH 0
+#define TGUY_VER_PATCH 1
 
 /**@}*/
 
