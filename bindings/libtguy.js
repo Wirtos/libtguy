@@ -12,6 +12,7 @@
         tguy_free = cwrap('tguy_free', null, [NUMBER]),
         tguy_get_frames_count = cwrap('tguy_get_frames_count', NUMBER, [NUMBER]),
         tguy_get_arr = cwrap('tguy_get_arr', NUMBER, [NUMBER, NUMBER]),
+        tguy_get_version = cwrap('tguy_get_version', NUMBER, []),
         lengthBytesUTF8 = Module['lengthBytesUTF8'],
         stringToUTF8 = Module['stringToUTF8'],
         UTF8ToString = Module['UTF8ToString'],
@@ -179,4 +180,5 @@
     prot['get_first_frame_for_element'] = prot.get_first_frame_for_element;
 
     Module['TGuy'] = TGuy;
+    Module['TGuyVersion'] = tguy_get_version();
 })();

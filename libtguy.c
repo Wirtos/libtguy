@@ -606,3 +606,7 @@ const char *tguy_get_string(TrashGuyState *st, size_t *len) {
 unsigned tguy_get_first_frame_for_element(const TrashGuyState *st, unsigned element_index) {
     return get_first_frame_for_element(st->first_element_frames_count, element_index);
 }
+
+unsigned tguy_get_version(void) {
+    return 1000000 * TGUY_VER_MAJOR + 1000 * TGUY_VER_MINOR + TGUY_VER_PATCH;
+}

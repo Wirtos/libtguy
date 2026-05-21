@@ -15,9 +15,9 @@
 /**MAJOR*/
 #define TGUY_VER_MAJOR 0
 /**MINOR*/
-#define TGUY_VER_MINOR 16
+#define TGUY_VER_MINOR 17
 /**PATCH*/
-#define TGUY_VER_PATCH 1
+#define TGUY_VER_PATCH 0
 
 /**@}*/
 
@@ -238,5 +238,11 @@ LIBTGUY_EXPORT const char *tguy_get_string(TrashGuyState * restrict st, size_t *
  * @return
  */
 LIBTGUY_EXPORT unsigned tguy_get_first_frame_for_element(const TrashGuyState *st, unsigned element_index);
+
+/**
+ *  Get version as integer in format MMMmmmppp. 020107002 -> 20.107.2
+ * @return Version number
+ */
+LIBTGUY_EXPORT unsigned tguy_get_version(void);
 
 #endif /* LIBTGUY_H */

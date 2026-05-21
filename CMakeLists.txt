@@ -184,7 +184,7 @@ if (EMSCRIPTEN)
         -sMODULARIZE=1
         -sEXPORT_NAME=TGuyModule
         -sEXPORTED_RUNTIME_METHODS=[cwrap,lengthBytesUTF8,stringToUTF8,UTF8ToString,setValue,getValue,POINTER_SIZE]
-        -sEXPORTED_FUNCTIONS=[_malloc,_free,_tguy_from_utf8_ex,_tguy_from_cstr_arr_ex,_tguy_set_frame,_tguy_get_string,_tguy_free,_tguy_get_frames_count,_tguy_get_arr]
+        -sEXPORTED_FUNCTIONS=[_malloc,_free,_tguy_from_utf8_ex,_tguy_from_cstr_arr_ex,_tguy_set_frame,_tguy_get_string,_tguy_free,_tguy_get_frames_count,_tguy_get_arr,_tguy_get_version]
 
         --closure=$<IF:$<CONFIG:Debug>,0,1>
         --post-js "${CMAKE_CURRENT_SOURCE_DIR}/bindings/libtguy.js"
