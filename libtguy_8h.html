@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">tguy<span id="projectnumber">&#160;0.16.1</span>
+   <div id="projectname">tguy<span id="projectnumber">&#160;0.17.0</span>
    </div>
    <div id="projectbrief">TrashGuy C library created to be easily usable from other languages with CFFI support.</div>
   </td>
@@ -92,9 +92,9 @@ Classes</h2></td></tr>
 Macros</h2></td></tr>
 <tr class="memitem:ga953af0b999e913d708f290ca790c0939" id="r_ga953af0b999e913d708f290ca790c0939"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__VERSION.html#ga953af0b999e913d708f290ca790c0939">TGUY_VER_MAJOR</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:ga953af0b999e913d708f290ca790c0939"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaffa140aa88ff0fc2b437ecaeb31497fa" id="r_gaffa140aa88ff0fc2b437ecaeb31497fa"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__VERSION.html#gaffa140aa88ff0fc2b437ecaeb31497fa">TGUY_VER_MINOR</a>&#160;&#160;&#160;16</td></tr>
+<tr class="memitem:gaffa140aa88ff0fc2b437ecaeb31497fa" id="r_gaffa140aa88ff0fc2b437ecaeb31497fa"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__VERSION.html#gaffa140aa88ff0fc2b437ecaeb31497fa">TGUY_VER_MINOR</a>&#160;&#160;&#160;17</td></tr>
 <tr class="separator:gaffa140aa88ff0fc2b437ecaeb31497fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:ga6dfac045b00bdfc8bfc8134041f5ece3" id="r_ga6dfac045b00bdfc8bfc8134041f5ece3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__VERSION.html#ga6dfac045b00bdfc8bfc8134041f5ece3">TGUY_VER_PATCH</a>&#160;&#160;&#160;1</td></tr>
+<tr class="memitem:ga6dfac045b00bdfc8bfc8134041f5ece3" id="r_ga6dfac045b00bdfc8bfc8134041f5ece3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__VERSION.html#ga6dfac045b00bdfc8bfc8134041f5ece3">TGUY_VER_PATCH</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:ga6dfac045b00bdfc8bfc8134041f5ece3"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:afaac6a841e1bae664fd812840428b5f1" id="r_afaac6a841e1bae664fd812840428b5f1"><td class="memItemLeft" align="right" valign="top"><a id="afaac6a841e1bae664fd812840428b5f1" name="afaac6a841e1bae664fd812840428b5f1"></a>
 #define&#160;</td><td class="memItemRight" valign="bottom"><b>LIBTGUY_EXPORT</b></td></tr>
@@ -143,6 +143,8 @@ Functions</h2></td></tr>
 <tr class="separator:aef522cb4885b48400450dff40d61c897"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ad4b3e6579a3a6f669ff2d7aeb510a792" id="r_ad4b3e6579a3a6f669ff2d7aeb510a792"><td class="memItemLeft" align="right" valign="top">LIBTGUY_EXPORT unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libtguy_8h.html#ad4b3e6579a3a6f669ff2d7aeb510a792">tguy_get_first_frame_for_element</a> (const <a class="el" href="structTrashGuyState.html">TrashGuyState</a> *st, unsigned element_index)</td></tr>
 <tr class="separator:ad4b3e6579a3a6f669ff2d7aeb510a792"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a672930855cffdb49b35af91525875c71" id="r_a672930855cffdb49b35af91525875c71"><td class="memItemLeft" align="right" valign="top">LIBTGUY_EXPORT unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libtguy_8h.html#a672930855cffdb49b35af91525875c71">tguy_get_version</a> (void)</td></tr>
+<tr class="separator:a672930855cffdb49b35af91525875c71"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Macro Definition Documentation</h2>
 <a id="a725feb20ed275662b06b96353888fd41" name="a725feb20ed275662b06b96353888fd41"></a>
@@ -878,6 +880,25 @@ Functions</h2></td></tr>
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd></dd></dl>
+
+</div>
+</div>
+<a id="a672930855cffdb49b35af91525875c71" name="a672930855cffdb49b35af91525875c71"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a672930855cffdb49b35af91525875c71">&#9670;&#160;</a></span>tguy_get_version()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LIBTGUY_EXPORT unsigned tguy_get_version </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Get version as integer in format MMMmmmppp. 020107002 -&gt; 20.107.2 </p><dl class="section return"><dt>Returns</dt><dd>Version number </dd></dl>
 
 </div>
 </div>

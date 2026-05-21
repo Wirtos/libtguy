@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">tguy<span id="projectnumber">&#160;0.16.1</span>
+   <div id="projectname">tguy<span id="projectnumber">&#160;0.17.0</span>
    </div>
    <div id="projectbrief">TrashGuy C library created to be easily usable from other languages with CFFI support.</div>
   </td>
@@ -166,6 +166,8 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><b>tguy_get_stri
 <tr class="separator:aa1783a2c6911a3e1ad953cd8b378c2a0"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a532d58f772c964ab6d7bb55b4771b897" id="r_a532d58f772c964ab6d7bb55b4771b897"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libtguy_8c.html#a532d58f772c964ab6d7bb55b4771b897">tguy_get_first_frame_for_element</a> (const <a class="el" href="structTrashGuyState.html">TrashGuyState</a> *st, unsigned element_index)</td></tr>
 <tr class="separator:a532d58f772c964ab6d7bb55b4771b897"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a8341364ea418e63255b633a11853f870" id="r_a8341364ea418e63255b633a11853f870"><td class="memItemLeft" align="right" valign="top">unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libtguy_8c.html#a8341364ea418e63255b633a11853f870">tguy_get_version</a> (void)</td></tr>
+<tr class="separator:a8341364ea418e63255b633a11853f870"><td class="memSeparator" colspan="2">&#160;</td></tr>
 </table>
 <h2 class="groupheader">Function Documentation</h2>
 <a id="ac960369f5380d3358fa079c3f23ede8a" name="ac960369f5380d3358fa079c3f23ede8a"></a>
@@ -671,6 +673,25 @@ const char *&#160;</td><td class="memItemRight" valign="bottom"><b>tguy_get_stri
   </dd>
 </dl>
 <dl class="section return"><dt>Returns</dt><dd>Number of frames, &gt;= 1 </dd></dl>
+
+</div>
+</div>
+<a id="a8341364ea418e63255b633a11853f870" name="a8341364ea418e63255b633a11853f870"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a8341364ea418e63255b633a11853f870">&#9670;&#160;</a></span>tguy_get_version()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">unsigned tguy_get_version </td>
+          <td>(</td>
+          <td class="paramtype">void&#160;</td>
+          <td class="paramname"></td><td>)</td>
+          <td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Get version as integer in format MMMmmmppp. 020107002 -&gt; 20.107.2 </p><dl class="section return"><dt>Returns</dt><dd>Version number </dd></dl>
 
 </div>
 </div>
