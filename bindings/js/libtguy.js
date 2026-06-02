@@ -2,6 +2,7 @@
     const cwrap = Module['cwrap'],
         TYPE_PTR = '*',
         PTR_SIZE = Module['POINTER_SIZE'],
+        /* prevent closure compiler from inlining string constants by using Module extern */
         NUMBER = Module.TGUY_DO_NOT_UNROLL = 'number',
         STRING = Module.TGUY_DO_NOT_UNROLL = 'string',
         ctor_args = [NUMBER, NUMBER, STRING, NUMBER, STRING, NUMBER, STRING, NUMBER, STRING],

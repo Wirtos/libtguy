@@ -21,13 +21,13 @@ set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
 option(BUILD_SHARED_LIBS "Build libtguy as dynamic library" OFF)
-option(TGUY_USE_FASTCLEAR "Double arena memory usage to increase speed" ON)
+option(TGUY_USE_FASTCLEAR "Double arena memory usage to increase speed" OFF)
 option(TGUY_BUILD_DOCS "Build doxygen docs" OFF)
 option(TGUY_USE_UTF8PROC "Use utf8proc library for full unicode support. Legacy, use options available in TGUY_UNICODE_LIBRARY instead" OFF)
 set(TGUY_UNICODE_LIBRARY "utf8proc" CACHE STRING
     "Select a unicode support backend")
 set_property(CACHE TGUY_UNICODE_LIBRARY PROPERTY STRINGS
-    "utf8proc" #[["libgrapheme" not yet supported]] "none")
+    "utf8proc" #[["libgrapheme" not yet supported]] "wgrapheme" "none")
 if (TGUY_USE_UTF8PROC)
     message(WARNING "TGUY_USE_UTF8PROC is deprecated, use TGUY_UNICODE_LIBRARY='utf8proc'")
     set(TGUY_UNICODE_LIBRARY "utf8proc")
@@ -80,8 +80,8 @@ endif ()
 
 if ("${TGUY_UNICODE_LIBRARY}" STREQUAL "utf8proc")
     message(STATUS "using utf8proc for unicode support")
-    find_package(UTF8Proc CONFIG QUIET)
-    if (NOT UTF8Proc_FOUND)
+    find_package(utf8proc CONFIG QUIET)
+    if (NOT utf8proc_FOUND)
         include(FetchContent)
         FetchContent_Declare(
             utf8proc
@@ -113,12 +113,30 @@ elseif ("${TGUY_UNICODE_LIBRARY}" STREQUAL "libgrapheme")
 
     target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_USE_LIBGRAPHEME)
     target_link_libraries(${PROJECT_NAME} PRIVATE grapheme)
+elseif ("${TGUY_UNICODE_LIBRARY}" STREQUAL "wgrapheme")
+    message(STATUS "using wgrapheme for unicode support")
+    find_package(wgrapheme CONFIG QUIET)
+    if (NOT wgrapheme_FOUND)
+        include(FetchContent)
+        FetchContent_Declare(
+            wgrapheme
+            GIT_REPOSITORY https://github.com/Wirtos/wgrapheme
+            GIT_TAG dcb023029dfa6c4ede71e9b9459bc4515f7b7486
+        )
+        set(BUILD_SHARED_LIBS OFF)
+        FetchContent_MakeAvailable(wgrapheme)
+        unset(BUILD_SHARED_LIBS)
+    endif ()
+
+    target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_USE_WGRAPHEME)
+    target_link_libraries(${PROJECT_NAME} PRIVATE wgrapheme::wgrapheme)
 endif ()
 
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-# install targets' resulting files
+# Save library targets into ${PACKAGE_NAME}Targets export set as a TGuy component
+# This doesn't install any real files
 install(
     TARGETS ${PROJECT_NAME}
     EXPORT ${PACKAGE_NAME}Targets
@@ -126,19 +144,22 @@ install(
     FILE_SET HEADERS
 )
 
+# install the file set as an actual ${PACKAGE_NAME}Targets.cmake and ${PACKAGE_NAME}Targets-${CMAKE_BUILD_TYPE}.cmake
 install(
     EXPORT ${PACKAGE_NAME}Targets
     DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
     NAMESPACE ${PACKAGE_NAME}::
 )
 
-# Generate main config file
+# Generate ${PACKAGE_NAME}Config.cmake config file
+# From a template file, all this file does is includes ${PACKAGE_NAME}Targets.cmake and checks if TGuy component is present inside
 configure_package_config_file(
     "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PACKAGE_NAME}Config.cmake.in"
     "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
     INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
 )
 
+# A file loaded by find_package, tells
 write_basic_package_version_file(
     "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Version.cmake"
     COMPATIBILITY SameMajorVersion
@@ -151,61 +172,19 @@ install(
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
 )
 
+# generate and install .cps from ${PACKAGE_NAME}Targets export set
 if (CMAKE_VERSION VERSION_GREATER_EQUAL "4.3")
     install(
         PACKAGE_INFO ${PACKAGE_NAME}
         EXPORT ${PACKAGE_NAME}Targets
+        VERSION ${PROJECT_VERSION}
+        COMPAT_VERSION 0.7.0 # tguy_sprint was introduced
         DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
     )
 endif ()
 
 if (EMSCRIPTEN)
-    option(TGUY_WASM_ONLY_BINDINGS "Only include methods which are used by the bindings" OFF)
-    if (NOT TGUY_WASM_ONLY_BINDINGS)
-        # export all the functions in libtguy and not those explicitly defined in EXPORTED_FUNCTIONS
-        target_compile_definitions(${PROJECT_NAME} PRIVATE LIBTGUY_EXPORT=__attribute__\(\(used\)\))
-    endif ()
-    # cmake emits EXPORT as __attribute__((visibility ("default"))), which doesn't actually keep the function alive in emscripten
-    # this is ugly but emscripten toolchain is dumb and doesn't have an option to build library target as wasm
-    # make a dummy file as executable needs at least one source to be present
-    set(dummy ${CMAKE_CURRENT_BINARY_DIR}/emsdkdummy.c)
-    file(WRITE "${dummy}" "")
-    add_executable(${PROJECT_NAME}_wasm "${dummy}")
-    # for some fucking reason emscripten ignores entire object inside the archive despite being marked as used
-    target_link_libraries(${PROJECT_NAME}_wasm PRIVATE ${PROJECT_NAME})
-
-    target_link_options(${PROJECT_NAME}_wasm PRIVATE
-        -Wclosure
-        -sFILESYSTEM=0
-        -sTEXTDECODER=2 # supported pretty much on every browser for ages, we don't need a fallback
-        -sMALLOC=emmalloc
-        -sENVIRONMENT=web
-
-        -sMODULARIZE=1
-        -sEXPORT_NAME=TGuyModule
-        -sEXPORTED_RUNTIME_METHODS=[cwrap,lengthBytesUTF8,stringToUTF8,UTF8ToString,setValue,getValue,POINTER_SIZE]
-        -sEXPORTED_FUNCTIONS=[_malloc,_free,_tguy_from_utf8_ex,_tguy_from_cstr_arr_ex,_tguy_set_frame,_tguy_get_string,_tguy_free,_tguy_get_frames_count,_tguy_get_arr,_tguy_get_version]
-
-        --closure=$<IF:$<CONFIG:Debug>,0,1>
-        --post-js "${CMAKE_CURRENT_SOURCE_DIR}/bindings/libtguy.js"
-    )
-    #[[ trigger target linking if js bindings file changes ]]
-    set_target_properties(${PROJECT_NAME}_wasm PROPERTIES
-        LINK_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/bindings/libtguy.js"
-    )
-
-    set(TGUY_WASM_BASE_NAME $<TARGET_FILE_PREFIX:${PROJECT_NAME}>$<TARGET_FILE_BASE_NAME:${PROJECT_NAME}>)
-    set_target_properties(${PROJECT_NAME}_wasm PROPERTIES OUTPUT_NAME ${TGUY_WASM_BASE_NAME})
-    # cmake (or emscripten toolchain) is dumb and doesn't know executable can emit few files so install them manually
-    install(
-        TARGETS ${PROJECT_NAME}_wasm
-        COMPONENT wasm
-    )
-    install(
-        FILES "${CMAKE_CURRENT_BINARY_DIR}/${TGUY_WASM_BASE_NAME}.wasm"
-        DESTINATION "${CMAKE_INSTALL_BINDIR}"
-        COMPONENT wasm
-    )
+    add_subdirectory(bindings/js)
 endif ()
 
 if (TGUY_BUILD_DOCS)

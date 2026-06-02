@@ -15,7 +15,7 @@
 /**MAJOR*/
 #define TGUY_VER_MAJOR 0
 /**MINOR*/
-#define TGUY_VER_MINOR 17
+#define TGUY_VER_MINOR 18
 /**PATCH*/
 #define TGUY_VER_PATCH 0
 
@@ -41,6 +41,9 @@
     #endif
 #endif
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /** @struct TGStrView
  *  String container
@@ -170,8 +173,55 @@ LIBTGUY_EXPORT void tguy_free(TrashGuyState *st);
  *  Sets the current frame for TrashGuyState
  * @param st           Valid TrashGuyState *
  * @param frame        0 <= frame < tguy_get_frames_count()
+ * @return             frame on success, -1 (UINT_MAX) on failure
  */
-LIBTGUY_EXPORT void tguy_set_frame(TrashGuyState *st, unsigned frame);
+LIBTGUY_EXPORT unsigned tguy_set_frame(TrashGuyState *st, unsigned frame);
+
+/**
+ *  Sets the current frame for TrashGuyState from state components
+ *  Position is index into arena received via tguy_get_arr(). \n
+ *  Example:
+ *  \code{.unparsed}
+ *  spacing = 1
+ *  text = "test"
+ *  tguy_get_frames_count() = 29
+ *
+ *  sprite_pos = 1, facing_right = 1, element_index = 0
+ *  [ 0] "U(> ^_^)> test"
+ *  sprite_pos = 2, facing_right = 1, element_index = 0
+ *  [ 1] "U (> ^_^)>test"
+ *  sprite_pos = 3, facing_right = 1, element_index = 0
+ *  [-1] INVALID, can't overlap with element with index 0
+ *  sprite_pos = 2, facing_right = 0, element_index = 0
+ *  [ 2] "Ut<(^_^ <) est"
+ *  sprite_pos = 1, facing_right = 0, element_index = 0
+ *  [ 3] "U<(^_^ <)  est"
+ *  sprite_pos = 1, facing_right = 1, element_index = 1
+ *  [ 4] "U(> ^_^)>  est"
+ *  There's no element with index 4, but this special case is allowed to face right with all elements cleared
+ *  sprite_pos = 1, facing_right = 1, element_index = 4
+ *  [28] "U(> ^_^)>     "
+ *  \endcode
+ * @param st            Valid TrashGuyState *
+ * @param sprite_pos    Position within the arena, 0 < sprite_pos < tguy_get_arr().len
+ * @param facing_right  Whether sprite should be facing right, otherwise left carrying the element
+ * @param element_index Index of the element that's currently being processed, see tguy_get_first_frame_for_element()
+ * @return              frame on success, -1 (UINT_MAX) on failure
+ */
+LIBTGUY_EXPORT unsigned tguy_set_pos(TrashGuyState *st, unsigned sprite_pos, unsigned facing_right,
+    unsigned element_index);
+
+
+/**
+ *
+ * @param               st            Valid TrashGuyState *
+ * @param[out,optional] frame         Current frame, 0 <= frame < tguy_get_frames_count()
+ * @param[out,optional] sprite_pos    Position within the arena, 0 < sprite_pos < tguy_get_arr().len
+ * @param[out,optional] facing_right  Whether sprite is facing right
+ * @param[out,optional] element_index Index of the element that's currently being processed, see tguy_get_first_frame_for_element()
+ */
+LIBTGUY_EXPORT void tguy_get_frame_state(const TrashGuyState *st, unsigned *frame, unsigned *sprite_pos,
+    unsigned *facing_right, unsigned *element_index);
 
 /**
  *  Returns number of frames particular TrashGuyState has
@@ -244,5 +294,9 @@ LIBTGUY_EXPORT unsigned tguy_get_first_frame_for_element(const TrashGuyState *st
  * @return Version number
  */
 LIBTGUY_EXPORT unsigned tguy_get_version(void);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* LIBTGUY_H */

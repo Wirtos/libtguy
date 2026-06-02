@@ -7,6 +7,10 @@
 #include <limits.h>
 #ifdef TGUY_USE_UTF8PROC
 #include <utf8proc.h>
+#elif defined TGUY_USE_WGRAPHEME
+#include <wgrapheme.h>
+#else
+#define TGUY_NO_GRAPHEME
 #endif
 
 #define ignored_ (void)
@@ -62,7 +66,10 @@ struct TrashGuyState {
 #endif
     unsigned cur_frame; /**< current frame set, initially UINT_MAX */
     unsigned max_frames; /**< number of frames animation takes to complete -> 0 <= frame < max_frames */
+    unsigned pos;
+    unsigned facing_right;
     unsigned element_index;
+    unsigned next_element_index;
     size_t buf_size; /**< computed size of the buffer to store one frame as string representation */
     char *output_str; /**< optional pointer to output string is stored here */
     TGStrView views_mem[]; /**< array of allocated views which are later distributed among fields */
@@ -82,7 +89,7 @@ struct TrashGuyState {
  * @return                      first frame index for element_index
  */
 static inline unsigned get_first_frame_for_element(unsigned first_element_frames_count, unsigned element_index) {
-    return element_index * (element_index + first_element_frames_count - 1);
+    return element_index * (element_index + first_element_frames_count - 1); /* todo: math overflow checks? */
 }
 
 /**
@@ -250,13 +257,12 @@ TrashGuyState *tguy_from_arr_ex_2(const TGStrView arr[],
     st->cur_frame = (unsigned)-1;
     /* current element index we're working on, reduces computation for sequential set_frame */
     st->element_index = 0;
+    st->next_element_index = 0;
     /* number of frames up to the last + 1 */
     st->max_frames = get_first_frame_for_element(st->first_element_frames_count, (unsigned)st->text.len) + 1;
     st->output_str = NULL;
 
-    /* no need to clear the arena because set_frame will do it anyway */
-    /* calling print functions or get_arr at this point is undefined behavior */
-
+    tguy_set_frame(st, 0);
     return st;
 }
 
@@ -277,15 +283,15 @@ TrashGuyState *tguy_from_arr(const TGStrView arr[], size_t len, unsigned spacing
 #ifdef TGUY_USE_UTF8PROC
 
 static size_t tguy_iterate_graphemes(
-    const utf8proc_uint8_t *str, utf8proc_ssize_t *read_bytes, utf8proc_ssize_t strlen,
-    utf8proc_uint32_t *start, utf8proc_uint32_t *end
+    const char *str, size_t *read_bytes, size_t strlen,
+    size_t *start, size_t *end
 ) {
     utf8proc_int32_t break_state = 0, codepoint, prev_codepoint = 0;
     if (*read_bytes == strlen)
         return 0;
     *start = *read_bytes;
     while (1) {
-        utf8proc_ssize_t n = utf8proc_iterate(str + *read_bytes, strlen - *read_bytes, &codepoint);
+        utf8proc_ssize_t n = utf8proc_iterate((unsigned char *)str + *read_bytes, strlen - *read_bytes, &codepoint);
         if (*read_bytes == strlen) {
             codepoint = 0;  // Final dummy codepoint
         } else if (codepoint == -1) {
@@ -300,6 +306,33 @@ static size_t tguy_iterate_graphemes(
         prev_codepoint = codepoint;
     }
     // Unreachable
+}
+
+static size_t tguy_graphemes_len(const char *str, size_t len) {
+    size_t read_bytes = 0;
+    size_t start, end;
+    size_t rlen = 0;
+    while (tguy_iterate_graphemes((unsigned char *) str, &read_bytes, (utf8proc_ssize_t)len, &start, &end)) {
+        rlen++;
+    }
+    return rlen;
+}
+
+#elif defined TGUY_USE_WGRAPHEME
+static size_t tguy_iterate_graphemes(
+    const char *str, size_t *read_bytes, size_t strlen,
+    size_t *start, size_t *end
+) {
+    *start = *read_bytes;
+    if (wgrapheme_next_boundary(str, strlen, *read_bytes, end) == WGRAPHEME_DONE) return 0;
+    *read_bytes = *end;
+    return *end - *start;
+}
+
+static size_t tguy_graphemes_len(const char *str, size_t len) {
+    size_t count = 0;
+    wgrapheme_count(str, len, &count);
+    return count;
 }
 
 #else
@@ -321,19 +354,6 @@ static char *tguy_utf8_next(const char *begin, const char *end) {
 
     return (char *) begin;
 }
-
-#endif
-#ifdef TGUY_USE_UTF8PROC
-static size_t tguy_graphemes_len(const char *string, size_t len) {
-    utf8proc_ssize_t read_bytes = 0;
-    utf8proc_uint32_t start, end;
-    size_t rlen = 0;
-    while (tguy_iterate_graphemes((unsigned char *) string, &read_bytes, (utf8proc_ssize_t)len, &start, &end)) {
-        rlen++;
-    }
-    return rlen;
-}
-#else
 
 static size_t tguy_codepoints_len(const char *string, size_t len) {
     size_t rlen = 0;
@@ -359,10 +379,9 @@ TrashGuyState *tguy_from_utf8_ex(const char string[], size_t len, unsigned spaci
     if (string == NULL) len = 0;
 
     len = (len == (size_t)-1) ? strlen(string) : len;
-    /* Sanity check the len */
-    if (len > INT_MAX) return NULL;
+
     if (len > 0) {
-#ifdef TGUY_USE_UTF8PROC
+#ifndef TGUY_NO_GRAPHEME
         flen = tguy_graphemes_len(string, len);
 #else
         flen = tguy_codepoints_len(string, len);
@@ -374,11 +393,11 @@ TrashGuyState *tguy_from_utf8_ex(const char string[], size_t len, unsigned spaci
             if (strarr == NULL) return NULL;
 
             size_t i = 0;
-#ifdef TGUY_USE_UTF8PROC
+#ifndef  TGUY_NO_GRAPHEME
             /* fill the array with ranges of the string representing whole utf-8 grapheme clusters */
-            utf8proc_ssize_t read_bytes = 0;
-            uint32_t start, end;
-            while (tguy_iterate_graphemes((unsigned char *)string, &read_bytes, len, &start, &end)) {
+            size_t read_bytes = 0;
+            size_t start, end;
+            while (tguy_iterate_graphemes(string, &read_bytes, len, &start, &end)) {
                 cstr2tgstrv(&strarr[i++], &string[start], end - start);
             }
 #else
@@ -460,8 +479,11 @@ void tguy_free(TrashGuyState *st) {
  *  All we know is desired frame and number of frames per first element.
  *  -# Because of the get_first_frame_for_element() we know that initial frame of each element is computed as: \n
  *     <code> frame = element_index * (first_element_frames_count + element_index - 1) </code> \n
- *     which is equivalent to this <a href='https://en.wikipedia.org/wiki/Quadratic_formula'>quadratic equation</a>: \n
- *     <code> (element_index)<sup>2</sup> + (first_element_frames_count - 1)element_index - frame = 0 </code> \n
+ *     which after moving frame to the right,
+ *     is equivalent to this <a href='https://en.wikipedia.org/wiki/Quadratic_formula'>quadratic equation</a>: \n
+ *     <code> 1*element_index<sup>2</sup> + (first_element_frames_count - 1)*element_index + (-frame) = 0 </code> \n
+ *     <code> ax<sup>2</sup> + bx + c = 0 </code> \n
+ *
  *     We solve this equation for element_index, which is x<sub>1</sub>. \n
  *     (x<sub>1</sub> means right wing of the parabola,
  *         x<sub>2</sub> (left side) is meaningless to us, valid indices/frames only reside on the right side) \n
@@ -480,17 +502,18 @@ void tguy_free(TrashGuyState *st) {
  *
  *  -# index i within the arena is computed as <code> sub_frame % (total / 2) </code>
  */
-void tguy_set_frame(TrashGuyState *restrict st, unsigned frame) {
+unsigned tguy_set_frame(TrashGuyState *restrict st, unsigned frame) {
     /*         a                        b                              c       */
     /* (element_index)^2 + (first_element_frames_count - 1)element_index - frame = 0 */
     assert((ignored_"Frame is bigger than get_frames_count()", frame < st->max_frames));
+    if (frame >= st->max_frames) return -1;
     unsigned prev_frame = st->cur_frame;
     unsigned element_index;
     unsigned first_element_frames_count = st->first_element_frames_count;
-    if (prev_frame == frame) return;
+    if (prev_frame == frame) return frame;
 
     if (prev_frame == frame - 1) {
-        element_index = st->element_index;
+        element_index = st->next_element_index;
     } else {
         /* unsigned a = 1; */
         unsigned b = (first_element_frames_count - 1),
@@ -511,7 +534,10 @@ void tguy_set_frame(TrashGuyState *restrict st, unsigned frame) {
 
     /* used to make set_frame faster by not setting same frame twice and to assert unset TrashGuyState */
     st->cur_frame = frame;
-    st->element_index = element_index + (i == 0 && !right);
+    st->next_element_index = element_index + (i == 0 && !right);
+    st->element_index = element_index;
+    st->pos = i + 1;
+    st->facing_right = right;
 
     if (prev_frame != -1u && prev_frame == frame - 1) {
         if (i != 0 && right) {
@@ -529,6 +555,32 @@ void tguy_set_frame(TrashGuyState *restrict st, unsigned frame) {
     if (!right && i != 0) {
         st->arena.data[i] = st->text.data[element_index];
     }
+    return frame;
+}
+
+unsigned tguy_set_pos(TrashGuyState *st, unsigned sprite_pos, unsigned facing_right, unsigned element_index) {
+    /* We can't be in place of trash can sprite, and we can't be in place of last arena tile */
+    /* last frame is the final one so pos can't be anything other than 1 facing right */
+    if (sprite_pos == 0 || sprite_pos > st->arena.len - 1 || element_index > st->text.len) return -1;
+
+    if (element_index == st->text.len && (sprite_pos != 1 || !facing_right)) return -1;
+
+    unsigned frames_per_element = st->first_element_frames_count + (2 * element_index);
+    if (sprite_pos > frames_per_element / 2) return -1;
+    unsigned frame = get_first_frame_for_element(st->first_element_frames_count, element_index);
+
+    frame += facing_right ? sprite_pos - 1 : frames_per_element - sprite_pos;
+    tguy_set_frame(st, frame);
+    return frame;
+}
+
+void tguy_get_frame_state(const TrashGuyState *st, unsigned *frame, unsigned *sprite_pos,
+                          unsigned *facing_right, unsigned *element_index) {
+    if (st == NULL) return;
+    if (frame) *frame = st->cur_frame;
+    if (sprite_pos) *sprite_pos = st->pos;
+    if (facing_right) *facing_right = st->facing_right;
+    if (element_index) *element_index = st->element_index;
 }
 
 size_t tguy_fprint(const TrashGuyState *st, FILE *fp) {

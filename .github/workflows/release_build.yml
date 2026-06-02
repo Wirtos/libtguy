@@ -34,7 +34,7 @@ jobs:
           cmake -B build_big -DCMAKE_BUILD_TYPE=${{env.WASM_BUILD_TYPE}} \
           -DCMAKE_TOOLCHAIN_FILE="$EMSDK/upstream/emscripten/cmake/Modules/Platform/Emscripten.cmake" \
           -DTGUY_WASM_LIB=ON \
-          -DTGUY_UNICODE_LIBRARY=utf8proc \
+          -DTGUY_UNICODE_LIBRARY=wgrapheme \
           -DTGUY_WASM_ONLY_BINDINGS=ON \
           -DCMAKE_INSTALL_PREFIX="tguy_big_install" 
 
