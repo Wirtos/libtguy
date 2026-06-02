@@ -21,7 +21,7 @@
  <tbody>
  <tr id="projectrow">
   <td id="projectalign">
-   <div id="projectname">tguy<span id="projectnumber">&#160;0.17.0</span>
+   <div id="projectname">tguy<span id="projectnumber">&#160;0.18.0</span>
    </div>
    <div id="projectbrief">TrashGuy C library created to be easily usable from other languages with CFFI support.</div>
   </td>
@@ -92,7 +92,7 @@ Classes</h2></td></tr>
 Macros</h2></td></tr>
 <tr class="memitem:ga953af0b999e913d708f290ca790c0939" id="r_ga953af0b999e913d708f290ca790c0939"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__VERSION.html#ga953af0b999e913d708f290ca790c0939">TGUY_VER_MAJOR</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:ga953af0b999e913d708f290ca790c0939"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:gaffa140aa88ff0fc2b437ecaeb31497fa" id="r_gaffa140aa88ff0fc2b437ecaeb31497fa"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__VERSION.html#gaffa140aa88ff0fc2b437ecaeb31497fa">TGUY_VER_MINOR</a>&#160;&#160;&#160;17</td></tr>
+<tr class="memitem:gaffa140aa88ff0fc2b437ecaeb31497fa" id="r_gaffa140aa88ff0fc2b437ecaeb31497fa"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__VERSION.html#gaffa140aa88ff0fc2b437ecaeb31497fa">TGUY_VER_MINOR</a>&#160;&#160;&#160;18</td></tr>
 <tr class="separator:gaffa140aa88ff0fc2b437ecaeb31497fa"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:ga6dfac045b00bdfc8bfc8134041f5ece3" id="r_ga6dfac045b00bdfc8bfc8134041f5ece3"><td class="memItemLeft" align="right" valign="top">#define&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="group__VERSION.html#ga6dfac045b00bdfc8bfc8134041f5ece3">TGUY_VER_PATCH</a>&#160;&#160;&#160;0</td></tr>
 <tr class="separator:ga6dfac045b00bdfc8bfc8134041f5ece3"><td class="memSeparator" colspan="2">&#160;</td></tr>
@@ -125,8 +125,12 @@ Functions</h2></td></tr>
 <tr class="separator:a1174744cf279da242f80da5b5c0b0eb7"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a88bd4e984ab1e44b2a771c1ab56d1579" id="r_a88bd4e984ab1e44b2a771c1ab56d1579"><td class="memItemLeft" align="right" valign="top">LIBTGUY_EXPORT void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libtguy_8h.html#a88bd4e984ab1e44b2a771c1ab56d1579">tguy_free</a> (<a class="el" href="structTrashGuyState.html">TrashGuyState</a> *st)</td></tr>
 <tr class="separator:a88bd4e984ab1e44b2a771c1ab56d1579"><td class="memSeparator" colspan="2">&#160;</td></tr>
-<tr class="memitem:aced8a95bc28a20867210c7ac75c260ff" id="r_aced8a95bc28a20867210c7ac75c260ff"><td class="memItemLeft" align="right" valign="top">LIBTGUY_EXPORT void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libtguy_8h.html#aced8a95bc28a20867210c7ac75c260ff">tguy_set_frame</a> (<a class="el" href="structTrashGuyState.html">TrashGuyState</a> *st, unsigned frame)</td></tr>
-<tr class="separator:aced8a95bc28a20867210c7ac75c260ff"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a988d86dd84ed0809c6c202e2ffacfcca" id="r_a988d86dd84ed0809c6c202e2ffacfcca"><td class="memItemLeft" align="right" valign="top">LIBTGUY_EXPORT unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libtguy_8h.html#a988d86dd84ed0809c6c202e2ffacfcca">tguy_set_frame</a> (<a class="el" href="structTrashGuyState.html">TrashGuyState</a> *st, unsigned frame)</td></tr>
+<tr class="separator:a988d86dd84ed0809c6c202e2ffacfcca"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a63c77581cd24f59a265768fa6bec3f1a" id="r_a63c77581cd24f59a265768fa6bec3f1a"><td class="memItemLeft" align="right" valign="top">LIBTGUY_EXPORT unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libtguy_8h.html#a63c77581cd24f59a265768fa6bec3f1a">tguy_set_pos</a> (<a class="el" href="structTrashGuyState.html">TrashGuyState</a> *st, unsigned sprite_pos, unsigned facing_right, unsigned element_index)</td></tr>
+<tr class="separator:a63c77581cd24f59a265768fa6bec3f1a"><td class="memSeparator" colspan="2">&#160;</td></tr>
+<tr class="memitem:a733a85b2511ef1b4cb027a2f102759ae" id="r_a733a85b2511ef1b4cb027a2f102759ae"><td class="memItemLeft" align="right" valign="top">LIBTGUY_EXPORT void&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libtguy_8h.html#a733a85b2511ef1b4cb027a2f102759ae">tguy_get_frame_state</a> (const <a class="el" href="structTrashGuyState.html">TrashGuyState</a> *st, unsigned *frame, unsigned *sprite_pos, unsigned *facing_right, unsigned *element_index)</td></tr>
+<tr class="separator:a733a85b2511ef1b4cb027a2f102759ae"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a0f43b05aaa5d5b46ccb2912ae5bfa494" id="r_a0f43b05aaa5d5b46ccb2912ae5bfa494"><td class="memItemLeft" align="right" valign="top">LIBTGUY_EXPORT unsigned&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libtguy_8h.html#a0f43b05aaa5d5b46ccb2912ae5bfa494">tguy_get_frames_count</a> (const <a class="el" href="structTrashGuyState.html">TrashGuyState</a> *st)</td></tr>
 <tr class="separator:a0f43b05aaa5d5b46ccb2912ae5bfa494"><td class="memSeparator" colspan="2">&#160;</td></tr>
 <tr class="memitem:a9d982450044de9bee0ef557738b38217" id="r_a9d982450044de9bee0ef557738b38217"><td class="memItemLeft" align="right" valign="top">LIBTGUY_EXPORT size_t&#160;</td><td class="memItemRight" valign="bottom"><a class="el" href="libtguy_8h.html#a9d982450044de9bee0ef557738b38217">tguy_fprint</a> (const <a class="el" href="structTrashGuyState.html">TrashGuyState</a> *st, FILE *fp)</td></tr>
@@ -822,6 +826,62 @@ Functions</h2></td></tr>
 
 </div>
 </div>
+<a id="a733a85b2511ef1b4cb027a2f102759ae" name="a733a85b2511ef1b4cb027a2f102759ae"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a733a85b2511ef1b4cb027a2f102759ae">&#9670;&#160;</a></span>tguy_get_frame_state()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LIBTGUY_EXPORT void tguy_get_frame_state </td>
+          <td>(</td>
+          <td class="paramtype">const <a class="el" href="structTrashGuyState.html">TrashGuyState</a> *&#160;</td>
+          <td class="paramname"><em>st</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned *&#160;</td>
+          <td class="paramname"><em>frame</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned *&#160;</td>
+          <td class="paramname"><em>sprite_pos</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned *&#160;</td>
+          <td class="paramname"><em>facing_right</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned *&#160;</td>
+          <td class="paramname"><em>element_index</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">st</td><td>Valid <a class="el" href="structTrashGuyState.html">TrashGuyState</a> * </td></tr>
+    <tr><td class="paramname">[out,optional]</td><td>frame Current frame, 0 &lt;= frame &lt; <a class="el" href="libtguy_8h.html#a0f43b05aaa5d5b46ccb2912ae5bfa494">tguy_get_frames_count()</a> </td></tr>
+    <tr><td class="paramname">[out,optional]</td><td>sprite_pos Position within the arena, 0 &lt; sprite_pos &lt; <a class="el" href="libtguy_8h.html#af47c164196b1eaf105e3f55e2598990a">tguy_get_arr()</a>.len </td></tr>
+    <tr><td class="paramname">[out,optional]</td><td>facing_right Whether sprite is facing right </td></tr>
+    <tr><td class="paramname">[out,optional]</td><td>element_index Index of the element that's currently being processed, see <a class="el" href="libtguy_8h.html#ad4b3e6579a3a6f669ff2d7aeb510a792">tguy_get_first_frame_for_element()</a> </td></tr>
+  </table>
+  </dd>
+</dl>
+
+</div>
+</div>
 <a id="a0f43b05aaa5d5b46ccb2912ae5bfa494" name="a0f43b05aaa5d5b46ccb2912ae5bfa494"></a>
 <h2 class="memtitle"><span class="permalink"><a href="#a0f43b05aaa5d5b46ccb2912ae5bfa494">&#9670;&#160;</a></span>tguy_get_frames_count()</h2>
 
@@ -927,14 +987,14 @@ Functions</h2></td></tr>
 
 </div>
 </div>
-<a id="aced8a95bc28a20867210c7ac75c260ff" name="aced8a95bc28a20867210c7ac75c260ff"></a>
-<h2 class="memtitle"><span class="permalink"><a href="#aced8a95bc28a20867210c7ac75c260ff">&#9670;&#160;</a></span>tguy_set_frame()</h2>
+<a id="a988d86dd84ed0809c6c202e2ffacfcca" name="a988d86dd84ed0809c6c202e2ffacfcca"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a988d86dd84ed0809c6c202e2ffacfcca">&#9670;&#160;</a></span>tguy_set_frame()</h2>
 
 <div class="memitem">
 <div class="memproto">
       <table class="memname">
         <tr>
-          <td class="memname">LIBTGUY_EXPORT void tguy_set_frame </td>
+          <td class="memname">LIBTGUY_EXPORT unsigned tguy_set_frame </td>
           <td>(</td>
           <td class="paramtype"><a class="el" href="structTrashGuyState.html">TrashGuyState</a> *&#160;</td>
           <td class="paramname"><em>st</em>, </td>
@@ -959,6 +1019,77 @@ Functions</h2></td></tr>
   </table>
   </dd>
 </dl>
+<dl class="section return"><dt>Returns</dt><dd>frame on success, -1 (UINT_MAX) on failure </dd></dl>
+
+</div>
+</div>
+<a id="a63c77581cd24f59a265768fa6bec3f1a" name="a63c77581cd24f59a265768fa6bec3f1a"></a>
+<h2 class="memtitle"><span class="permalink"><a href="#a63c77581cd24f59a265768fa6bec3f1a">&#9670;&#160;</a></span>tguy_set_pos()</h2>
+
+<div class="memitem">
+<div class="memproto">
+      <table class="memname">
+        <tr>
+          <td class="memname">LIBTGUY_EXPORT unsigned tguy_set_pos </td>
+          <td>(</td>
+          <td class="paramtype"><a class="el" href="structTrashGuyState.html">TrashGuyState</a> *&#160;</td>
+          <td class="paramname"><em>st</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>sprite_pos</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>facing_right</em>, </td>
+        </tr>
+        <tr>
+          <td class="paramkey"></td>
+          <td></td>
+          <td class="paramtype">unsigned&#160;</td>
+          <td class="paramname"><em>element_index</em>&#160;</td>
+        </tr>
+        <tr>
+          <td></td>
+          <td>)</td>
+          <td></td><td></td>
+        </tr>
+      </table>
+</div><div class="memdoc">
+<p>Sets the current frame for <a class="el" href="structTrashGuyState.html">TrashGuyState</a> from state components Position is index into arena received via <a class="el" href="libtguy_8h.html#af47c164196b1eaf105e3f55e2598990a">tguy_get_arr()</a>. <br  />
+ Example: </p><div class="fragment"><div class="line">spacing = 1</div>
+<div class="line">text = &quot;test&quot;</div>
+<div class="line">tguy_get_frames_count() = 29</div>
+<div class="line"> </div>
+<div class="line">sprite_pos = 1, facing_right = 1, element_index = 0</div>
+<div class="line">[ 0] &quot;U(&gt; ^_^)&gt; test&quot;</div>
+<div class="line">sprite_pos = 2, facing_right = 1, element_index = 0</div>
+<div class="line">[ 1] &quot;U (&gt; ^_^)&gt;test&quot;</div>
+<div class="line">sprite_pos = 3, facing_right = 1, element_index = 0</div>
+<div class="line">[-1] INVALID, can&#39;t overlap with element with index 0</div>
+<div class="line">sprite_pos = 2, facing_right = 0, element_index = 0</div>
+<div class="line">[ 2] &quot;Ut&lt;(^_^ &lt;) est&quot;</div>
+<div class="line">sprite_pos = 1, facing_right = 0, element_index = 0</div>
+<div class="line">[ 3] &quot;U&lt;(^_^ &lt;)  est&quot;</div>
+<div class="line">sprite_pos = 1, facing_right = 1, element_index = 1</div>
+<div class="line">[ 4] &quot;U(&gt; ^_^)&gt;  est&quot;</div>
+<div class="line">There&#39;s no element with index 4, but this special case is allowed to face right with all elements cleared</div>
+<div class="line">sprite_pos = 1, facing_right = 1, element_index = 4</div>
+<div class="line">[28] &quot;U(&gt; ^_^)&gt;     &quot;</div>
+</div><!-- fragment --> <dl class="params"><dt>Parameters</dt><dd>
+  <table class="params">
+    <tr><td class="paramname">st</td><td>Valid <a class="el" href="structTrashGuyState.html">TrashGuyState</a> * </td></tr>
+    <tr><td class="paramname">sprite_pos</td><td>Position within the arena, 0 &lt; sprite_pos &lt; <a class="el" href="libtguy_8h.html#af47c164196b1eaf105e3f55e2598990a">tguy_get_arr()</a>.len </td></tr>
+    <tr><td class="paramname">facing_right</td><td>Whether sprite should be facing right, otherwise left carrying the element </td></tr>
+    <tr><td class="paramname">element_index</td><td>Index of the element that's currently being processed, see <a class="el" href="libtguy_8h.html#ad4b3e6579a3a6f669ff2d7aeb510a792">tguy_get_first_frame_for_element()</a> </td></tr>
+  </table>
+  </dd>
+</dl>
+<dl class="section return"><dt>Returns</dt><dd>frame on success, -1 (UINT_MAX) on failure </dd></dl>
 
 </div>
 </div>
