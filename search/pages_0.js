@@ -1,4 +1,4 @@
 var searchData=
 [
-  ['tguy_0',['tguy',['../index.html',1,'']]]
+  ['tguy_0',['TGuy',['../index.html',1,'']]]
 ];

@@ -4,7 +4,7 @@ var searchData=
   ['tgstrv_1',['TGSTRV',['../libtguy_8h.html#a725feb20ed275662b06b96353888fd41',1,'libtguy.h']]],
   ['tgstrview_2',['TGStrView',['../structTGStrView.html',1,'']]],
   ['tgstrviewarr_3',['TGStrViewArr',['../structTGStrViewArr.html',1,'']]],
-  ['tguy_4',['tguy',['../index.html',1,'']]],
+  ['tguy_4',['TGuy',['../index.html',1,'']]],
   ['tguy_5fclear_5ffield_5',['tguy_clear_field',['../libtguy_8c.html#a2f7392871ef07d7e3069306f05fe5b77',1,'libtguy.c']]],
   ['tguy_5ffprint_6',['tguy_fprint',['../libtguy_8c.html#a6ca2d6cd74605515c72f26068ff2a188',1,'tguy_fprint(const TrashGuyState *st, FILE *fp):&#160;libtguy.c'],['../libtguy_8h.html#a9d982450044de9bee0ef557738b38217',1,'tguy_fprint(const TrashGuyState *st, FILE *fp):&#160;libtguy.c']]],
   ['tguy_5ffree_7',['tguy_free',['../libtguy_8c.html#ac1851885b8122a9fd478360b2d2840d4',1,'tguy_free(TrashGuyState *st):&#160;libtguy.c'],['../libtguy_8h.html#a88bd4e984ab1e44b2a771c1ab56d1579',1,'tguy_free(TrashGuyState *st):&#160;libtguy.c']]],
