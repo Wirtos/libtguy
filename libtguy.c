@@ -41,11 +41,48 @@ typedef struct {
  * @return res or NULL if str is NULL
  */
 static TGStrView *cstr2tgstrv(TGStrView *res, const char *str, size_t len) {
-    if (str == NULL) return NULL;
-
-    res->str = str;
-    res->len = (len == (size_t)-1) ? strlen(str) : len;
+    if (str == NULL) {
+        res->str = "";
+        res->len = 0;
+    } else {
+        res->str = str;
+        res->len = (len == (size_t)-1) ? strlen(str) : len;
+    }
     return res;
+}
+
+static size_t strvarr_strlen(const TGStrView arr[], size_t len) {
+    size_t plen = 0;
+    if (arr == NULL) return 0;
+    for (size_t i = 0; i < len; i++) { plen += arr[i].len; }
+    return plen;
+}
+
+static size_t strvarr_write(char str_out[], const TGStrView arr[], size_t len) {
+    size_t plen = 0;
+    if (arr == NULL) return 0;
+    for (size_t i = 0; i < len; i++) {
+        memcpy(&str_out[plen], arr[i].str, arr[i].len);
+        plen += arr[i].len;
+    }
+    return plen;
+}
+
+/* like strvarr_copy but uses str_mem as source for dst, it's assumed to be at least strvarr_strlen in size */
+static size_t strvarr_copy_src(TGStrView *dst, const TGStrView *src, size_t len, const char str_mem[]) {
+    size_t si = 0;
+    if (src == NULL) return 0;
+    for (size_t i = 0; i < len; i++) {
+        dst[i].len = src[i].len;
+        dst[i].str = &str_mem[si];
+        si += dst[i].len;
+    }
+    return si;
+}
+
+/* copy one array of strviews into another */
+static void strvarr_copy(TGStrView *dst, const TGStrView *src, size_t len) {
+    for (size_t i = 0; i < len; i++) dst[i] = src[i];
 }
 
 /**
@@ -100,7 +137,7 @@ static inline unsigned get_first_frame_for_element(unsigned first_element_frames
 static inline void tguy_clear_field(const TrashGuyState *st, unsigned n_clear_elements) {
     TGStrViewArr arena = st->arena;
     TGStrViewArr text = st->text;
-    unsigned items_offset = arena.len - text.len + n_clear_elements;
+    size_t items_offset = arena.len - text.len + n_clear_elements;
 #ifdef TGUY_FASTCLEAR
     memcpy(&arena.data[0], &st->empty_arena_.data[0],
            items_offset * sizeof(arena.data[0]));
@@ -110,37 +147,6 @@ static inline void tguy_clear_field(const TrashGuyState *st, unsigned n_clear_el
 #endif
     memcpy(&arena.data[items_offset], &text.data[n_clear_elements],
            sizeof(st->arena.data[0]) * (text.len - n_clear_elements));
-}
-
-static size_t strvarr_strlen(const TGStrView arr[], size_t len) {
-    size_t plen = 0;
-    for (size_t i = 0; i < len; i++) { plen += arr[i].len; }
-    return plen;
-}
-
-static size_t strvarr_write(char str_out[], const TGStrView arr[], size_t len) {
-    size_t plen = 0;
-    for (size_t i = 0; i < len; i++) {
-        memcpy(&str_out[plen], arr[i].str, arr[i].len);
-        plen += arr[i].len;
-    }
-    return plen;
-}
-
-/* like strvarr_copy but uses str_mem as source for dst, it's assumed to be at least strvarr_strlen in size */
-static size_t strvarr_copy_src(TGStrView *dst, const TGStrView *src, size_t len, const char str_mem[]) {
-    size_t si = 0;
-    for (size_t i = 0; i < len; i++) {
-        dst[i].len = src[i].len;
-        dst[i].str = &str_mem[si];
-        si += dst[i].len;
-    }
-    return si;
-}
-
-/* copy one array of strviews into another */
-static void strvarr_copy(TGStrView *dst, const TGStrView *src, size_t len) {
-    for (size_t i = 0; i < len; i++) dst[i] = src[i];
 }
 
 TrashGuyState *tguy_from_arr_ex_2(const TGStrView arr[],
@@ -290,19 +296,21 @@ static size_t tguy_iterate_graphemes(
     if (*read_bytes == strlen)
         return 0;
     *start = *read_bytes;
+    *end = *start;
     while (1) {
-        utf8proc_ssize_t n = utf8proc_iterate((unsigned char *)str + *read_bytes, strlen - *read_bytes, &codepoint);
+        utf8proc_ssize_t n = utf8proc_iterate((unsigned char *)str + *read_bytes, (utf8proc_ssize_t)(strlen - *read_bytes), &codepoint);
         if (*read_bytes == strlen) {
             codepoint = 0;  // Final dummy codepoint
         } else if (codepoint == -1) {
-            return n;
+            *read_bytes = (size_t)-1;
+            return 0;
         }
-        *read_bytes = *read_bytes + n;
+        *read_bytes = *read_bytes + (size_t)n;
         if (prev_codepoint != 0 && utf8proc_grapheme_break_stateful(prev_codepoint, codepoint, &break_state)) {
-            *read_bytes = *read_bytes - n;
+            *read_bytes = *read_bytes - (size_t)n;
             *end = *read_bytes;  // The last byte (not inclusive) of this grapheme
             return 1;
-            }
+        }
         prev_codepoint = codepoint;
     }
     // Unreachable
@@ -312,10 +320,10 @@ static size_t tguy_graphemes_len(const char *str, size_t len) {
     size_t read_bytes = 0;
     size_t start, end;
     size_t rlen = 0;
-    while (tguy_iterate_graphemes((unsigned char *) str, &read_bytes, (utf8proc_ssize_t)len, &start, &end)) {
+    while (tguy_iterate_graphemes((char *) str, &read_bytes, len, &start, &end)) {
         rlen++;
     }
-    return rlen;
+    return read_bytes != (size_t)-1 ? rlen : (size_t)-1;
 }
 
 #elif defined TGUY_USE_WGRAPHEME
@@ -323,15 +331,25 @@ static size_t tguy_iterate_graphemes(
     const char *str, size_t *read_bytes, size_t strlen,
     size_t *start, size_t *end
 ) {
+    wgrapheme_status_t status;
     *start = *read_bytes;
-    if (wgrapheme_next_boundary(str, strlen, *read_bytes, end) == WGRAPHEME_DONE) return 0;
+    *end = *start;
+    status = wgrapheme_next_boundary(str, strlen, *read_bytes, end);
+    if (status != WGRAPHEME_OK) {
+        if (status != WGRAPHEME_DONE) {
+            *read_bytes = (size_t)-1;
+        }
+        return 0;
+    }
     *read_bytes = *end;
     return *end - *start;
 }
 
 static size_t tguy_graphemes_len(const char *str, size_t len) {
     size_t count = 0;
-    wgrapheme_count(str, len, &count);
+    if (wgrapheme_count(str, len, &count) != WGRAPHEME_OK) {
+        return -1;
+    }
     return count;
 }
 
@@ -386,7 +404,7 @@ TrashGuyState *tguy_from_utf8_ex(const char string[], size_t len, unsigned spaci
 #else
         flen = tguy_codepoints_len(string, len);
 #endif
-        if (flen > INT_MAX) return NULL;
+        if (flen == (size_t)-1 || flen > INT_MAX) return NULL;
 
         if (flen) {
             strarr = malloc(sizeof(strarr[0]) * flen);
@@ -411,10 +429,10 @@ TrashGuyState *tguy_from_utf8_ex(const char string[], size_t len, unsigned spaci
     }
 
     st = tguy_from_arr_ex(strarr, flen, spacing,
-                          cstr2tgstrv(&sv_sprite_space, sprite_space, sprite_space_len),
-                          cstr2tgstrv(&sv_sprite_can, sprite_can, sprite_can_len),
-                          cstr2tgstrv(&sv_sprite_right, sprite_right, sprite_right_len),
-                          cstr2tgstrv(&sv_sprite_left, sprite_left, sprite_left_len));
+                          sprite_space ? cstr2tgstrv(&sv_sprite_space, sprite_space, sprite_space_len) : NULL,
+                          sprite_can ? cstr2tgstrv(&sv_sprite_can, sprite_can, sprite_can_len) : NULL,
+                          sprite_right ? cstr2tgstrv(&sv_sprite_right, sprite_right, sprite_right_len) : NULL,
+                          sprite_left ? cstr2tgstrv(&sv_sprite_left, sprite_left, sprite_left_len) : NULL);
     free(strarr);
     return st;
 }
@@ -435,19 +453,23 @@ TrashGuyState *tguy_from_cstr_arr_ex(const char *const arr[], size_t len, unsign
     TrashGuyState *st;
     TGStrView sv_sprite_space, sv_sprite_can, sv_sprite_right, sv_sprite_left;
     TGStrView *svarr = NULL;
-    if (arr == NULL) len = 0;
-    if (len != 0) {
+
+    if (arr != NULL && len != 0) {
         svarr = malloc(sizeof(svarr[0]) * len);
         if (svarr == NULL) return NULL;
         /* create array of string views from C array */
-        for (size_t i = 0; i < len; i++) { cstr2tgstrv(&svarr[i], arr[i], (size_t)-1); }
+        for (size_t i = 0; i < len; i++) {
+            cstr2tgstrv(&svarr[i], arr[i], (size_t)-1);
+        }
+    } else {
+        len = 0;
     }
 
     st = tguy_from_arr_ex(svarr, len, spacing,
-                          cstr2tgstrv(&sv_sprite_space, sprite_space, sprite_space_len),
-                          cstr2tgstrv(&sv_sprite_can, sprite_can, sprite_can_len),
-                          cstr2tgstrv(&sv_sprite_right, sprite_right, sprite_right_len),
-                          cstr2tgstrv(&sv_sprite_left, sprite_left, sprite_left_len));
+                          sprite_space ? cstr2tgstrv(&sv_sprite_space, sprite_space, sprite_space_len) : NULL,
+                          sprite_can ? cstr2tgstrv(&sv_sprite_can, sprite_can, sprite_can_len) : NULL,
+                          sprite_right ? cstr2tgstrv(&sv_sprite_right, sprite_right, sprite_right_len) : NULL,
+                          sprite_left ? cstr2tgstrv(&sv_sprite_left, sprite_left, sprite_left_len) : NULL);
     free(svarr);
     return st;
 }
@@ -506,7 +528,7 @@ unsigned tguy_set_frame(TrashGuyState *restrict st, unsigned frame) {
     /*         a                        b                              c       */
     /* (element_index)^2 + (first_element_frames_count - 1)element_index - frame = 0 */
     assert((ignored_"Frame is bigger than get_frames_count()", frame < st->max_frames));
-    if (frame >= st->max_frames) return -1;
+    if (frame >= st->max_frames) return -1u;
     unsigned prev_frame = st->cur_frame;
     unsigned element_index;
     unsigned first_element_frames_count = st->first_element_frames_count;
@@ -561,12 +583,12 @@ unsigned tguy_set_frame(TrashGuyState *restrict st, unsigned frame) {
 unsigned tguy_set_pos(TrashGuyState *st, unsigned sprite_pos, unsigned facing_right, unsigned element_index) {
     /* We can't be in place of trash can sprite, and we can't be in place of last arena tile */
     /* last frame is the final one so pos can't be anything other than 1 facing right */
-    if (sprite_pos == 0 || sprite_pos > st->arena.len - 1 || element_index > st->text.len) return -1;
+    if (sprite_pos == 0 || sprite_pos > st->arena.len - 1 || element_index > st->text.len) return -1u;
 
-    if (element_index == st->text.len && (sprite_pos != 1 || !facing_right)) return -1;
+    if (element_index == st->text.len && (sprite_pos != 1 || !facing_right)) return -1u;
 
     unsigned frames_per_element = st->first_element_frames_count + (2 * element_index);
-    if (sprite_pos > frames_per_element / 2) return -1;
+    if (sprite_pos > frames_per_element / 2) return -1u;
     unsigned frame = get_first_frame_for_element(st->first_element_frames_count, element_index);
 
     frame += facing_right ? sprite_pos - 1 : frames_per_element - sprite_pos;
@@ -603,7 +625,7 @@ size_t tguy_sprint(const TrashGuyState *st, char *buf) {
         for (size_t j = 0, slen = sv.len; j < slen; j++) { *buf++ = sv.str[j]; }
     }
     *buf = '\0';
-    return buf - start;
+    return (size_t)(buf - start);
 }
 
 const TGStrView *tguy_get_arr(const TrashGuyState *st, size_t *len) {

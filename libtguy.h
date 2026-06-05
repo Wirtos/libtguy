@@ -17,7 +17,7 @@
 /**MINOR*/
 #define TGUY_VER_MINOR 18
 /**PATCH*/
-#define TGUY_VER_PATCH 0
+#define TGUY_VER_PATCH 1
 
 /**@}*/
 
@@ -261,7 +261,7 @@ LIBTGUY_EXPORT size_t tguy_sprint(const TrashGuyState *st, char buf[]);
 LIBTGUY_EXPORT size_t tguy_get_bsize(TrashGuyState *st);
 
 /**
- *  Returns read-only array of TrashGuy frame: TGStrView[]{ {"t",1}, {"e",1}, {"ї",2}, {"s",1}, {"t",1}, {NULL,0} }
+ *  Returns read-only array view of current TrashGuy frame: TGStrView[]{ {"t",1}, {"e",1}, {"ї",2}, {"s",1}, {"t",1}, {NULL,0} }
  * @param st           Valid TrashGuyState with frame set
  * @param[out,optional] len     Length of the returned array, excluding NULL terminator
  * @return             Array of const TGStrView,  terminated with TGStrView.str == NULL

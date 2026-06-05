@@ -30,7 +30,7 @@ jobs:
     - name: Configure CMake
       run: cmake -B build -DCMAKE_BUILD_TYPE=${{env.BUILD_TYPE}} -DTGUY_BUILD_DOCS=ON
     - name: Build doxygen docs
-      run: cmake --build build --config ${{env.BUILD_TYPE}} --target tguy_docs
+      run: cmake --build build --config ${{env.BUILD_TYPE}} --target TGuy_docs
     - name: Install doxygen docs
       run: cmake --install build --component docs --prefix install
 
@@ -38,4 +38,4 @@ jobs:
       uses: peaceiris/actions-gh-pages@v4
       with:
         github_token: ${{ secrets.GITHUB_TOKEN }}
-        publish_dir: install/share/doc/tguy/doxygen/html
+        publish_dir: install/share/doc/TGuy/doxygen/html

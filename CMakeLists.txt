@@ -11,7 +11,7 @@ get_version_from_macro(
     VERSIONS MAJOR MINOR PATCH
 )
 
-project(tguy
+project(TGuy
     LANGUAGES C
     VERSION "${TGUY_VERSION}"
     DESCRIPTION "TrashGuy C library created to be easily usable from other languages with CFFI support.")
@@ -35,9 +35,8 @@ endif ()
 
 message(STATUS "libtguy ${TGUY_VERSION}")
 
-set(PACKAGE_NAME TGuy)
 add_library(${PROJECT_NAME})
-add_library(${PACKAGE_NAME}::TGuy ALIAS ${PROJECT_NAME})
+add_library(${PROJECT_NAME}::TGuy ALIAS ${PROJECT_NAME})
 
 target_sources(${PROJECT_NAME}
     PUBLIC
@@ -45,6 +44,13 @@ target_sources(${PROJECT_NAME}
         FILES libtguy.h
     PRIVATE
         libtguy.c
+)
+
+set_target_properties(${PROJECT_NAME}
+    PROPERTIES
+    PREFIX "lib"
+    OUTPUT_NAME "tguy"
+    SOVERSION ${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}
 )
 
 target_compile_definitions(${PROJECT_NAME}
@@ -59,23 +65,15 @@ if (BUILD_SHARED_LIBS)
     )
 endif ()
 
+if (TGUY_USE_FASTCLEAR)
+    target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_FASTCLEAR)
+endif ()
 
 # link libm for sqrt where applicable
 include(CheckLibraryExists)
 check_library_exists(m sqrt "" LIBM_EXISTS)
 if (LIBM_EXISTS)
     target_link_libraries(${PROJECT_NAME} PRIVATE m)
-endif ()
-
-set_target_properties(${PROJECT_NAME}
-    PROPERTIES
-        EXPORT_NAME ${PACKAGE_NAME}
-        PREFIX "lib"
-        SOVERSION ${TGUY_VERSION_MAJOR}.${TGUY_VERSION_MINOR}
-)
-
-if (TGUY_USE_FASTCLEAR)
-    target_compile_definitions(${PROJECT_NAME} PRIVATE TGUY_FASTCLEAR)
 endif ()
 
 if ("${TGUY_UNICODE_LIBRARY}" STREQUAL "utf8proc")
@@ -121,7 +119,7 @@ elseif ("${TGUY_UNICODE_LIBRARY}" STREQUAL "wgrapheme")
         FetchContent_Declare(
             wgrapheme
             GIT_REPOSITORY https://github.com/Wirtos/wgrapheme
-            GIT_TAG dcb023029dfa6c4ede71e9b9459bc4515f7b7486
+            GIT_TAG aa57ecf063fc44ca585eb53da899af4bd0d3e6dc
         )
         set(BUILD_SHARED_LIBS OFF)
         FetchContent_MakeAvailable(wgrapheme)
@@ -135,56 +133,52 @@ endif ()
 include(GNUInstallDirs)
 include(CMakePackageConfigHelpers)
 
-# Save library targets into ${PACKAGE_NAME}Targets export set as a TGuy component
+# Save library targets into ${PROJECT_NAME}Targets export set as a TGuy component
 # This doesn't install any real files
 install(
     TARGETS ${PROJECT_NAME}
-    EXPORT ${PACKAGE_NAME}Targets
+    EXPORT ${PROJECT_NAME}Targets
     COMPONENT TGuy
     FILE_SET HEADERS
 )
 
-# install the file set as an actual ${PACKAGE_NAME}Targets.cmake and ${PACKAGE_NAME}Targets-${CMAKE_BUILD_TYPE}.cmake
+# install the file set as an actual ${PROJECT_NAME}Targets.cmake and ${PROJECT_NAME}Targets-${CMAKE_BUILD_TYPE}.cmake
 install(
-    EXPORT ${PACKAGE_NAME}Targets
-    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
-    NAMESPACE ${PACKAGE_NAME}::
+    EXPORT ${PROJECT_NAME}Targets
+    DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
+    NAMESPACE ${PROJECT_NAME}::
 )
 
-# Generate ${PACKAGE_NAME}Config.cmake config file
-# From a template file, all this file does is includes ${PACKAGE_NAME}Targets.cmake and checks if TGuy component is present inside
+# Generate ${PROJECT_NAME}Config.cmake config file
+# From a template file, all this file does is includes ${PROJECT_NAME}Targets.cmake and checks if TGuy component is present inside
 configure_package_config_file(
-    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PACKAGE_NAME}Config.cmake.in"
-    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
-    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
+    "${CMAKE_CURRENT_SOURCE_DIR}/cmake/${PROJECT_NAME}Config.cmake.in"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+    INSTALL_DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
 )
 
 # A file loaded by find_package, tells
 write_basic_package_version_file(
-    "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Version.cmake"
+    "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Version.cmake"
     COMPATIBILITY SameMajorVersion
 )
 
 install(
         FILES
-        "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Config.cmake"
-        "${CMAKE_CURRENT_BINARY_DIR}/${PACKAGE_NAME}Version.cmake"
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Config.cmake"
+        "${CMAKE_CURRENT_BINARY_DIR}/${PROJECT_NAME}Version.cmake"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
 )
 
-# generate and install .cps from ${PACKAGE_NAME}Targets export set
+# generate and install .cps from ${PROJECT_NAME}Targets export set
 if (CMAKE_VERSION VERSION_GREATER_EQUAL "4.3")
     install(
-        PACKAGE_INFO ${PACKAGE_NAME}
-        EXPORT ${PACKAGE_NAME}Targets
+        PACKAGE_INFO ${PROJECT_NAME}
+        EXPORT ${PROJECT_NAME}Targets
         VERSION ${PROJECT_VERSION}
         COMPAT_VERSION 0.7.0 # tguy_sprint was introduced
-        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PACKAGE_NAME}"
+        DESTINATION "${CMAKE_INSTALL_LIBDIR}/cmake/${PROJECT_NAME}"
     )
-endif ()
-
-if (EMSCRIPTEN)
-    add_subdirectory(bindings/js)
 endif ()
 
 if (TGUY_BUILD_DOCS)
