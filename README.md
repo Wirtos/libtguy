@@ -1,5 +1,46 @@
 # libtguy
 
+## Example
+```C
+#include <libtguy.h>
+#include <string.h>
+
+int main(void) {
+    const char text[] = "іувіу";
+    size_t len = strlen(text); // can also use -1 for nul-terminated C strings
+    int initial_spacing = 1;
+    TrashGuyState *tg = tguy_from_utf8(text, len, initial_spacing);
+    if (tg == NULL) return 1;
+    unsigned n_frames = tguy_get_frames_count(tg);
+    // can only fail when called for the first time, next uses are guaranteed to be successful
+    if (tguy_get_string(tg, NULL) == NULL) return 1; 
+    
+    for (unsigned i = 0; i < n_frames; i++) {
+        size_t strlen;
+        tguy_set_frame(tg, i);
+        puts(tguy_get_string(tg, &strlen));
+    }
+
+    tguy_free(tg);
+    return 0;
+}
+```
+```text
+🗑(> ^_^)> іувіу
+🗑 (> ^_^)>іувіу
+🗑і<(^_^ <) увіу
+🗑<(^_^ <)  увіу
+🗑(> ^_^)>  увіу
+🗑 (> ^_^)> увіу
+🗑  (> ^_^)>увіу
+🗑 у<(^_^ <) віу
+🗑у<(^_^ <)  віу
+🗑<(^_^ <)   віу
+🗑(> ^_^)>   віу
+🗑 (> ^_^)>  віу
+...
+```
+
 ## Build instructions
 ```sh
 git clone --recursive https://github.com/Wirtos/libtguy
