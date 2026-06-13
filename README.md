@@ -1,5 +1,20 @@
 # libtguy
 
+## Use in your CMake project
+```cmake
+add_executable(myexe main.c)
+
+include(FetchContent)
+FetchContent_Declare(
+    TGuy
+    GIT_REPOSITORY https://github.com/Wirtos/libtguy
+    GIT_TAG 0.18.1
+    FIND_PACKAGE_ARGS 0.18.1
+)
+FetchContent_MakeAvailable(TGuy)
+target_link_libraries(myexe PRIVATE TGuy::TGuy)
+```
+
 ## Example
 ```C
 #include <libtguy.h>
